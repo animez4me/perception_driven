@@ -6,7 +6,7 @@ using namespace collision_avoidance_pick_and_place;
 int main(int argc,char** argv)
 {
   geometry_msgs::Pose box_pose;
-  std::vector<geometry_msgs::Pose> pick_poses, place_poses;
+  std::vector<geometry_msgs::Pose> pick_poses, place_poses, drink_poses;
 
   /* =========================================================================================*/
   /*	INITIALIZING ROS NODE
@@ -60,8 +60,10 @@ int main(int argc,char** argv)
 		  application.cfg.MARKER_TOPIC,1);
 
   // target recognition client (perception)
-  application.target_recognition_client = nh.serviceClient<collision_avoidance_pick_and_place::GetTargetPose>(
-		  application.cfg.TARGET_RECOGNITION_SERVICE);
+  //application.target_recognition_client = nh.serviceClient<collision_avoidance_pick_and_place::GetTargetPose>(
+      //application.cfg.TARGET_RECOGNITION_SERVICE);
+  application.object_recognition_client = nh.serviceClient<collision_avoidance_pick_and_place::GetTargetPose>(
+      application.cfg.OBJECT_RECOGNITION_SERVICE);
 
   // grasp action client (vacuum gripper)
   application.grasp_action_client_ptr = GraspActionClientPtr(
@@ -92,13 +94,18 @@ int main(int argc,char** argv)
   application.set_gripper(false);
 
   // get the box position and orientation
-  box_pose = application.detect_box_pick();
+  //box_pose = application.detect_box_pick();
+  box_pose = application.detect_object();
 
   // build a sequence of poses to "pick" the box
   pick_poses = application.create_pick_moves(box_pose);
 
   // plan/execute the sequence of "pick" moves
   application.pickup_box(pick_poses,box_pose);
+
+  drink_poses = application.create_drink_moves();
+
+  application.move_to_drink(drink_poses,box_pose);
 
   // build a sequence of poses to "place" the box
   place_poses = application.create_place_moves();
