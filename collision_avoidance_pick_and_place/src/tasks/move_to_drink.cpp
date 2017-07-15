@@ -1,6 +1,6 @@
 #include <collision_avoidance_pick_and_place/pick_and_place.h>
 
-/* MOVE ARM THROUGH PLACE POSES
+/* MOVE ARM THROUGH DRINK POSES
   Goal:
     - Move the robot through the entire place motion.
     - Open gripper after reaching the release pose.
@@ -8,8 +8,8 @@
     - Use the methods seen so far such as "move", "sendGoal", "waitForResult" whenever needed.
 */
 
-void collision_avoidance_pick_and_place::PickAndPlace::place_box(std::vector<geometry_msgs::Pose>& place_poses,
-		const geometry_msgs::Pose& box_pose)
+void collision_avoidance_pick_and_place::PickAndPlace::move_to_drink(std::vector<geometry_msgs::Pose>& place_poses,
+    const geometry_msgs::Pose& box_pose)
 {
   //ROS_ERROR_STREAM("place_box is not implemented yet.  Aborting."); exit(1);
 
@@ -31,49 +31,25 @@ void collision_avoidance_pick_and_place::PickAndPlace::place_box(std::vector<geo
   // move the robot to each wrist place pose
   for(unsigned int i = 0; i < place_poses.size(); i++)
   {
-  	moveit_msgs::RobotState robot_state;
-  	if(i==0 || i == 1)
-  	{
-      // attaching box
-      set_attached_object(true,box_pose,robot_state);
-      show_box(true);
+    moveit_msgs::RobotState robot_state;
 
-  	}
-  	else
-  	{
-      // detaching box
-      set_attached_object(false,geometry_msgs::Pose(),robot_state);
-      show_box(false);
-  	}
+    // attaching box
+    set_attached_object(true,box_pose,robot_state);
+    show_box(true);
 
-  	// create motion plan
+    // create motion plan
     moveit::planning_interface::MoveGroup::Plan plan;
-    success = create_motion_plan(place_poses[i],robot_state,plan,0) && move_group_ptr->execute(plan);
+    success = create_motion_plan(place_poses[i],robot_state,plan,1) && move_group_ptr->execute(plan);
 
     if(success)
     {
-      ROS_INFO_STREAM("Place Move " << i <<" Succeeded");
+      ROS_INFO_STREAM("Drink Move " << i <<" Succeeded");
     }
     else
     {
-      ROS_ERROR_STREAM("Place Move " << i <<" Failed");
+      ROS_ERROR_STREAM("Drink Move " << i <<" Failed");
       set_gripper(false);
       exit(1);
-    }
-
-
-    if(i == 1)
-    {
-	/* Fill Code:
-	 * Goal:
-	 * - Turn off gripper suction after the release pose is reached.
-	 * Hints:
-	 * - Call the "set_gripper" function to turn on suction.
-	 * - The input to the set_gripper method takes a "true" or "false"
-	 * 	  boolean argument.
-	 */
-      set_gripper(false);
-
     }
 
   }

@@ -55,21 +55,15 @@ void collision_avoidance_pick_and_place::PickAndPlace::pickup_box(std::vector<ge
 	  {
 	  	moveit_msgs::RobotState robot_state;
 
-	  /* Inspect Code:
-	   * Goal:
-	   * - Look in the "set_attached_object()" method to understand
-	   * 	how to attach a payload using moveit.
-	   */
-		set_attached_object(false,geometry_msgs::Pose(),robot_state);
+     /* - Look in the "set_attached_object()" method to understand
+        how to attach a payload using moveit.  */
+      set_attached_object(false,geometry_msgs::Pose(),robot_state);
 
-
-	  /* Inspect Code:
-	   * Goal:
-	   * - Look in the "create_motion_plan()" method to observe how an
-	   * 	entire moveit motion plan is created.
-	   */
+      /* - Look in the "create_motion_plan()" method to observe how an
+        entire moveit motion plan is created.  */
       moveit::planning_interface::MoveGroup::Plan plan;
-	    success = create_motion_plan(pick_poses[i],robot_state,plan) && move_group_ptr->execute(plan);
+
+      success = create_motion_plan(pick_poses[i],robot_state,plan,0) && move_group_ptr->execute(plan);
 
 	    // verifying move completion
 	    if(success)
@@ -83,18 +77,9 @@ void collision_avoidance_pick_and_place::PickAndPlace::pickup_box(std::vector<ge
 	      exit(1);
 	    }
 
-
 	    if(i == 0)
-	    {
-
-		/* Fill Code:
-		 * Goal:
-		 * - Turn on gripper suction after approach pose is reached.
-		 * Hints:
-		 * - Call the "set_gripper" function to turn on suction.
-		 * - The input to the set_gripper method takes a "true" or "false"
-		 * 	  boolean argument.
-		 */
+      {
+     //Turn on gripper suction after approach pose is reached.
        set_gripper(true);
 
 	    }

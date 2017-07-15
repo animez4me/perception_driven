@@ -1,24 +1,22 @@
 #include <collision_avoidance_pick_and_place/pick_and_place.h>
 
-/*    CREATE PLACE MOVES
+/* CREATE DRINK MOVES
   Goal:
-    - Set the pose of the tcp at the box place pose
-    - Create tcp poses for the place motion (approach, release, retreat).
+    - Set the pose for the tcp at the drink position.
+    - Create tcp poses for the pick motions (pre_drink, drink, pre_drink).
     - Find transform of the wrist in tcp coordinates
     - Convert tcp pick poses to wrist poses.
-         * MoveIt's kinematics require the target position to be specified relative to
+         * Moveit's kinematics require the target position to be specified relative to
            one of the kinematic links of the manipulator arm (as defined in the SRDF)
 
   Hints:
     - You can manipulate the "world_to_tcp_tf" transform through the "setOrigin" and "setRotation".
-    - Use the "create_manipulation_poses" function to create the tcp poses between each place move
-    - Use the "transform_from_tcp_to_wrist" function to populate the "wrist_place_poses" array.
+    - Look into the "create_manipulation_poses" function and observe how each pick pose is created.
+    - Use the "transform_from_tcp_to_wrist" function to populate the "wrist_pick_poses" array.
 */
 
-std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlace::create_place_moves()
+std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlace::create_drink_moves()
 {
-  //ROS_ERROR_STREAM("create_place_moves is not implemented yet.  Aborting."); exit(1);
-
   // task variables
   tf::Transform world_to_tcp_tf;
   tf::StampedTransform tcp_to_wrist_tf;
@@ -33,7 +31,7 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
    * 	using cfg.BOX_PLACE_TF.
    * - cfg.BOX_PLACE_TF is a tf::Transform object so it provides a getOrigin() method.
    */
-  world_to_tcp_tf.setOrigin(cfg.BOX_PLACE_TF.getOrigin());
+  world_to_tcp_tf.setOrigin(cfg.PRE_DRINK_TF.getOrigin());
 
   /* Fill Code:
    * Goal:
@@ -55,7 +53,7 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
    * - Look in the "cfg" object to find the corresponding retreat and approach distance
    * 	values.
    */
-  tcp_place_poses = create_manipulation_poses(cfg.RETREAT_DISTANCE, cfg.APPROACH_DISTANCE, world_to_tcp_tf);
+  tcp_place_poses = create_drink_poses(world_to_tcp_tf);
 
 
   /* Fill Code:

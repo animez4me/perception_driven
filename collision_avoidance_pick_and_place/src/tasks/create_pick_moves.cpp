@@ -15,6 +15,9 @@
     - Use the "transform_from_tcp_to_wrist" function to populate the "wrist_pick_poses" array.
 */
 
+
+
+
 std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlace::create_pick_moves(geometry_msgs::Pose &box_pose)
 {
   //ROS_ERROR_STREAM("create_pick_moves is not implemented yet.  Aborting."); exit(1);
@@ -24,7 +27,7 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
   tf::Transform world_to_box_tf;
   tf::StampedTransform tcp_to_wrist_tf;
   std::vector<geometry_msgs::Pose> tcp_pick_poses, wrist_pick_poses;
-
+  tf::TransformBroadcaster broadc;
 
   /* Fill Code:
    * Goal:
@@ -37,10 +40,12 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
   world_to_tcp_tf.setOrigin(box_position);
 
 
-  /* Setting tcp orientation
+  /* Setting tcp orientation - lines up the ee to object pose
 	   * Inverting the approach direction so that the tcp points towards the box instead of
 	   * away from it.*/
   world_to_tcp_tf.setRotation(world_to_box_tf.getRotation()* tf::Quaternion(tf::Vector3(1,0,0),M_PI));
+  //broadc.sendTransform(tf::StampedTransform(world_to_tcp_tf, ros::Time::now(), "world_frame", "world_to_tcp"));
+  transform_broadcaster.sendTransform(tf::StampedTransform(world_to_tcp_tf, ros::Time::now(), "world_frame", "world_to_tcp"));
 
 
   // create all the poses for tcp's pick motion (approach, pick and retreat)
@@ -52,7 +57,7 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
    * Hints:
    * - Use the "lookupTransform" method in the transform listener.
    */
-  transform_listener_ptr->waitForTransform(cfg.TCP_LINK_NAME, cfg.WRIST_LINK_NAME,ros::Time::now(),ros::Duration(3.0f));
+  transform_listener_ptr->waitForTransform(cfg.TCP_LINK_NAME, cfg.WRIST_LINK_NAME,ros::Time(0.0f),ros::Duration(3.0f));
   transform_listener_ptr->lookupTransform(cfg.TCP_LINK_NAME, cfg.WRIST_LINK_NAME,ros::Time(0.0f),tcp_to_wrist_tf);
 
 
