@@ -29,7 +29,9 @@ void collision_avoidance_pick_and_place::PickAndPlace::move_to_wait_position()
   move_group_ptr->setNamedTarget(cfg.WAIT_POSE_NAME);
 
   // set allowed planning time
-  move_group_ptr->setPlanningTime(60.0f);
+  move_group_ptr->setPlanningTime(1.0f);
+
+
 
   /* Fill Code:
    * Goal:

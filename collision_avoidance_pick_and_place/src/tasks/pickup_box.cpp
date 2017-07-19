@@ -35,7 +35,7 @@ void collision_avoidance_pick_and_place::PickAndPlace::pickup_box(std::vector<ge
     move_group_ptr->setEndEffectorLink(cfg.WRIST_LINK_NAME);
 
 	  // set allowed planning time
-	  move_group_ptr->setPlanningTime(60.0f);
+    move_group_ptr->setPlanningTime(1.0f);
 
 
 	  /* Fill Code:
@@ -69,6 +69,7 @@ void collision_avoidance_pick_and_place::PickAndPlace::pickup_box(std::vector<ge
 	    if(success)
 	    {
 	      ROS_INFO_STREAM("Pick Move " << i <<" Succeeded");
+        ROS_INFO_STREAM("pick position: " << pick_poses[i].position);
 	    }
 	    else
 	    {

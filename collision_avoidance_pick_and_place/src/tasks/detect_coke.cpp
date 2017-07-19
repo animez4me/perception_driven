@@ -1,3 +1,4 @@
+#include <collision_avoidance_pick_and_place/pick_and_place.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
@@ -23,7 +24,6 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <tf2_ros/transform_listener.h>
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <object_recognition_msgs/ObjectRecognitionAction.h>
 
@@ -31,6 +31,7 @@
 sensor_msgs::PointCloud2 sensor_cloud_msg_;
 bool gotpt = false;
 bool gotobject = false;
+geometry_msgs::Pose box_pose;
 
 ros::Publisher cloud_publisher;
 float clickedx;
@@ -40,7 +41,6 @@ float clickedz;
 
 double Object_confidence = 0;
 std::vector<geometry_msgs::Pose> Object_poses;
-geometry_msgs::PoseStamped Object_pose;
 std::vector<std::string> Object_ids;
 std::string Object_id;
 
@@ -154,101 +154,144 @@ void click_callback(const geometry_msgs::PointStamped pt)
 
 void objectCallback(const object_recognition_msgs::RecognizedObjectArray objects_msg)
 {
-  float oldDistance = 999.0;
-  double confident = 0;
-  int id = -1;
+  float oldDistance = 999.0; 
 
   std::string coke_id = "2c536957edd6b006c361083178002c21";
   std::string mug_id = "ad1d4a1a8ef2e426daa1247db2001226";
   std::string juice_id = "9b516faff37644e7793290391807a29d";
   std::string book_id = "928e269d54edd1190dc741928604953c";
 
+//  tf::StampedTransform tf_tf;
+//  TransformListenerPtr transform_listener_ptr;
+//  try{
+//    transform_listener_ptr->waitForTransform("world_frame", "kinect2_rgb_optical_frame", ros::Time(0.0f), ros::Duration(3.0));
+//    transform_listener_ptr->lookupTransform("world_frame", "kinect2_rgb_optical_frame", ros::Time(0.0f), tf_tf);
 
-  std::string object;
-  for (int i = 0; i < objects_msg.objects.size(); ++i) {
-
-    Object_poses.push_back(objects_msg.objects[i].pose.pose.pose);
-    Object_ids.push_back(objects_msg.objects[i].type.key.c_str());
-
-    float objectx = objects_msg.objects[i].pose.pose.pose.position.x;
-    float objecty = objects_msg.objects[i].pose.pose.pose.position.y;
-    float objectz = objects_msg.objects[i].pose.pose.pose.position.z;
-
-    //Compare distance of objects pose to the clicked point
-    float distance = pow((clickedx - objectx),2) + pow((clickedy - objecty),2) + pow((clickedz - objectz),2);
-    if (distance < oldDistance){
-      Object_id = objects_msg.objects[i].type.key.c_str();
-      Object_pose.pose = objects_msg.objects[i].pose.pose.pose;
-
-      if (coke_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
-        object = "coke";
-      }
-      else if (mug_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
-        object = "mug";
-      }
-      else if (juice_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
-        object = "juice";
-      }
-      else if (book_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
-        object = "juice";
-      }
-      oldDistance = distance;
-    }
-    ROS_INFO("%d", i);
-
-    ROS_INFO("Selected Object: %s", object.c_str());
-  }
-
-//  for (int i = 0; i < objects_msg.objects.size(); ++i) {
-//    if (coke_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
-//      Object_pose.pose = objects_msg.objects[i].pose.pose.pose;
-//    }
 //  }
+//  catch (tf::TransformException ex){
+//    ROS_ERROR("%s",ex.what());
+//    exit(1);
+//  }
+    tf2_ros::Buffer tfBuffer;
+    tf2_ros::TransformListener tfListener(tfBuffer);
+    geometry_msgs::TransformStamped transformStamped;
+    try{
+      ROS_INFO("Waiting for transform");
+      transformStamped = tfBuffer.lookupTransform("world_frame", "kinect2_rgb_optical_frame", ros::Time(0), ros::Duration(10.0));
+
+    }
+    catch (tf2::TransformException &ex) {
+      ROS_WARN("%s",ex.what());
+    }
+    geometry_msgs::Pose tf_pose;
+    tf_pose.position.x = transformStamped.transform.translation.x;
+    tf_pose.position.y = transformStamped.transform.translation.y;
+    tf_pose.position.z = transformStamped.transform.translation.z;
+    tf_pose.orientation.w = transformStamped.transform.rotation.w;
+    tf_pose.orientation.x = transformStamped.transform.rotation.x;
+    tf_pose.orientation.y = transformStamped.transform.rotation.y;
+    tf_pose.orientation.z = transformStamped.transform.rotation.z;
+    tf::Transform tf_tf;
+    tf::poseMsgToTF(tf_pose, tf_tf);
+
+    std::string object;
+    geometry_msgs::Pose Object_pose;
+    tf::Transform point;
+    tf::TransformBroadcaster broadc;
+    for (int i = 0; i < objects_msg.objects.size(); ++i) {
+
+      // Load detected objects into array
+      Object_poses.push_back(objects_msg.objects[i].pose.pose.pose);
+      Object_ids.push_back(objects_msg.objects[i].type.key.c_str());
+
+      // Convert object pose to tf
+      tf::Transform box_tf;
+      tf::poseMsgToTF(Object_poses[i],box_tf);
+
+      // Exit the program if object is not found
+      if (!Object_poses[i].position.x){
+        ROS_ERROR_STREAM("None or too many objects detected");
+        exit(1);
+      }
+
+      // Lookup transformation between world frame and kinect frame
+      //  tf2_ros::Buffer tfBuffer;
+      //  tf2_ros::TransformListener tfListener(tfBuffer);
+      //  geometry_msgs::TransformStamped transformStamped;
+      //  try{
+      //    ROS_INFO("Waiting for transform");
+      //    transformStamped = tfBuffer.lookupTransform("world_frame", "kinect2_rgb_optical_frame", ros::Time(0), ros::Duration(10.0));
+
+      //  }
+      //  catch (tf2::TransformException &ex) {
+      //    ROS_WARN("%s",ex.what());
+      //  }
+      //  tf_pose.position.x = transformStamped.transform.translation.x;
+      //  tf_pose.position.y = transformStamped.transform.translation.y;
+      //  tf_pose.position.z = transformStamped.transform.translation.z;
+      //  tf_pose.orientation.w = transformStamped.transform.rotation.w;
+      //  tf_pose.orientation.x = transformStamped.transform.rotation.x;
+      //  tf_pose.orientation.y = transformStamped.transform.rotation.y;
+      //  tf_pose.orientation.z = transformStamped.transform.rotation.z;
+
+      // Perform frame transformation to find object pose in world_frame
+      //  tf::Transform tf_tf, transformed;
+
+      tf::Transform transformed = tf_tf*box_tf;
+      tf::poseTFToMsg(transformed,Object_pose);
+
+      ROS_INFO("Pose X is: %f", Object_pose.position.x);
+      ROS_INFO("Pose Y is: %f", Object_pose.position.y);
+      ROS_INFO("Pose Z is: %f", Object_pose.position.z);
+      ROS_INFO("Orientation W is: %f", Object_pose.orientation.w);
+      ROS_INFO("Orientation X is: %f", Object_pose.orientation.x);
+      ROS_INFO("Orientation Y is: %f", Object_pose.orientation.y);
+      ROS_INFO("Orientation Z is: %f", Object_pose.orientation.z);
 
 
-  ROS_INFO("Position x is: %f", Object_pose.pose.position.x);
-  ROS_INFO("Position y is: %f", Object_pose.pose.position.y);
-  ROS_INFO("Position z is: %f", Object_pose.pose.position.z);
-  ROS_INFO("Pose w is: %f", Object_pose.pose.orientation.w);
-  ROS_INFO("Pose x is: %f", Object_pose.pose.orientation.x);
-  ROS_INFO("Pose y is: %f", Object_pose.pose.orientation.y);
-  ROS_INFO("Pose z is: %f", Object_pose.pose.orientation.z);
+      float objectx = Object_pose.position.x;
+      float objecty = Object_pose.position.y;
+      float objectz = Object_pose.position.z;
 
-//  static tf2_ros::TransformBroadcaster br;
-//  geometry_msgs::TransformStamped transformStamped, transformStamped2;
+      //Compare distance of objects pose to the clicked point
+      float distance = pow((clickedx - objectx),2) + pow((clickedy - objecty),2) + pow((clickedz - objectz),2);
 
-//  transformStamped.header.stamp = ros::Time::now();
-//  transformStamped.header.frame_id = "kinect2_rgb_optical_frame";
-//  transformStamped.child_frame_id = "ORK";
-//  transformStamped.transform.translation.x = Object_pose.pose.position.x;
-//  transformStamped.transform.translation.y = Object_pose.pose.position.y;
-//  transformStamped.transform.translation.z = Object_pose.pose.position.z;
-//  transformStamped.transform.rotation.x = Object_pose.pose.orientation.x;
-//  transformStamped.transform.rotation.y = Object_pose.pose.orientation.y;
-//  transformStamped.transform.rotation.z = Object_pose.pose.orientation.z;
-//  transformStamped.transform.rotation.w = Object_pose.pose.orientation.w;
+      if (distance < oldDistance){
+        Object_id = objects_msg.objects[i].type.key.c_str();
+        box_pose = Object_pose;
 
-//  br.sendTransform(transformStamped);
-
-  tf::Transform point, prepare;
-  tf::TransformBroadcaster broadc;
-
-  point.setOrigin(tf::Vector3(Object_pose.pose.position.x , Object_pose.pose.position.y,
-                              Object_pose.pose.position.z));
-  point.setRotation(tf::Quaternion(Object_pose.pose.orientation.x, Object_pose.pose.orientation.y,
-                                   Object_pose.pose.orientation.z, Object_pose.pose.orientation.w));
-  broadc.sendTransform(tf::StampedTransform(point, ros::Time::now(), "kinect2_rgb_optical_frame", "ORK"));
-
-//  prepare.setOrigin(tf::Vector3(0,0,0.05));
-//  prepare.setRotation(tf::Quaternion(tf::Vector3(1,0,0),M_PI));
-//  broadc.sendTransform(tf::StampedTransform(prepare, ros::Time::now(), "ORK", "pre_tf"));
-
-  gotobject = true;
+        if (coke_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
+          object = "coke";
+        }
+        else if (mug_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
+          object = "mug";
+        }
+        else if (juice_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
+          object = "juice";
+        }
+        else if (book_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
+          object = "book";
+        }
+        oldDistance = distance;
+      }
+      ROS_INFO("%d", i);
+      ROS_INFO("Selected Object: %s", object.c_str());
+      ROS_INFO("Distance: %f", distance);
+    }
+    point.setOrigin(tf::Vector3(box_pose.position.x , box_pose.position.y,
+                                box_pose.position.z));
+    point.setRotation(tf::Quaternion(box_pose.orientation.x, box_pose.orientation.y,
+                                     box_pose.orientation.z, box_pose.orientation.w));
+    broadc.sendTransform(tf::StampedTransform(point, ros::Time::now(), "world_frame", "ORK"));
+    ROS_INFO("ORK Pose X is: %f", box_pose.position.x);
+    ROS_INFO("ORK Pose Y is: %f", box_pose.position.y);
+    ROS_INFO("ORK Pose Z is: %f", box_pose.position.z);
+    gotobject = true;
 }
 
 geometry_msgs::Pose collision_avoidance_pick_and_place::PickAndPlace::detect_coke()
 {
-  ros::NodeHandle nh;  
+  ros::NodeHandle nh;
   tf::TransformBroadcaster bro;
   //cloud_publisher = nh.advertise<sensor_msgs::PointCloud2>("points",1);
 
@@ -268,59 +311,9 @@ geometry_msgs::Pose collision_avoidance_pick_and_place::PickAndPlace::detect_cok
     ros::spinOnce();
     ros::Duration(3).sleep();
 
-  }
+  }  
 
-    ROS_INFO("1Position x is: %f", Object_pose.pose.position.x);
-    ROS_INFO("1Position y is: %f", Object_pose.pose.position.y);
-    ROS_INFO("1Position z is: %f", Object_pose.pose.position.z);
-    ROS_INFO("1Pose w is: %f", Object_pose.pose.orientation.w);
-    ROS_INFO("1Pose x is: %f", Object_pose.pose.orientation.x);
-    ROS_INFO("1Pose y is: %f", Object_pose.pose.orientation.y);
-    ROS_INFO("1Pose z is: %f", Object_pose.pose.orientation.z);
 
-    // Convert object pose to tf
-    geometry_msgs::Pose box_pose, tf_pose;
-    tf::Transform box_tf;
-    tf::poseMsgToTF(Object_pose.pose,box_tf);
-
-    // Exit the program if object is not found
-    if (!Object_pose.pose.position.x){
-      ROS_ERROR_STREAM("None or too many objects detected");
-      exit(1);
-    }
-
-    // Lookup transformation between world frame and kinect frame
-    tf2_ros::Buffer tfBuffer;
-    tf2_ros::TransformListener tfListener(tfBuffer);
-    geometry_msgs::TransformStamped transformStamped;
-    try{
-      ROS_INFO("Waiting for transform");
-      transformStamped = tfBuffer.lookupTransform("world_frame", "kinect2_rgb_optical_frame", ros::Time(0), ros::Duration(10.0));
-    }
-    catch (tf2::TransformException &ex) {
-      ROS_WARN("%s",ex.what());
-    }
-    tf_pose.position.x = transformStamped.transform.translation.x;
-    tf_pose.position.y = transformStamped.transform.translation.y;
-    tf_pose.position.z = transformStamped.transform.translation.z;
-    tf_pose.orientation.w = transformStamped.transform.rotation.w;
-    tf_pose.orientation.x = transformStamped.transform.rotation.x;
-    tf_pose.orientation.y = transformStamped.transform.rotation.y;
-    tf_pose.orientation.z = transformStamped.transform.rotation.z;
-
-    // Perform frame transformation to find object pose in world_frame
-    tf::Transform tf_tf, transformed;
-    tf::poseMsgToTF(tf_pose, tf_tf);
-    transformed = tf_tf*box_tf;
-    tf::poseTFToMsg(transformed,box_pose);
-
-    ROS_INFO("Pose X is: %f", box_pose.position.x);
-    ROS_INFO("Pose Y is: %f", box_pose.position.y);
-    ROS_INFO("Pose Z is: %f", box_pose.position.z);
-    ROS_INFO("Orientation W is: %f", box_pose.orientation.w);
-    ROS_INFO("Orientation X is: %f", box_pose.orientation.x);
-    ROS_INFO("Orientation Y is: %f", box_pose.orientation.y);
-    ROS_INFO("Orientation Z is: %f", box_pose.orientation.z);
 
     // updating box marker for visualization in rviz
     visualization_msgs::Marker marker = cfg.MARKER_MESSAGE;

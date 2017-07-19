@@ -80,6 +80,14 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
   // printing results
   ROS_INFO_STREAM("tcp position at place: " << world_to_tcp_tf.getOrigin());
   ROS_INFO_STREAM("wrist position at place: "<<wrist_place_poses[1].position);
+  ROS_INFO_STREAM("Wrist picking orientationtcp x: " << tcp_place_poses[0].orientation.x);
+  ROS_INFO_STREAM("Wrist picking orientationtcp y: " << tcp_place_poses[0].orientation.y);
+  ROS_INFO_STREAM("Wrist picking orientationtcp z: " << tcp_place_poses[0].orientation.z);
+  ROS_INFO_STREAM("Wrist picking orientationtcp w: " << tcp_place_poses[0].orientation.w);
+  ROS_INFO_STREAM("Wrist picking orientation1 x: " << wrist_place_poses[0].orientation.x);
+  ROS_INFO_STREAM("Wrist picking orientation1 y: " << wrist_place_poses[0].orientation.y);
+  ROS_INFO_STREAM("Wrist picking orientation1 z: " << wrist_place_poses[0].orientation.z);
+  ROS_INFO_STREAM("Wrist picking orientation1 w: " << wrist_place_poses[0].orientation.w);
 
   return wrist_place_poses;
 }

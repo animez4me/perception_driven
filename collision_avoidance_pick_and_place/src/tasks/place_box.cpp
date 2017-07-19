@@ -1,4 +1,5 @@
 #include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 /* MOVE ARM THROUGH PLACE POSES
   Goal:
@@ -26,11 +27,14 @@ void collision_avoidance_pick_and_place::PickAndPlace::place_box(std::vector<geo
   move_group_ptr->setPoseReferenceFrame(cfg.WORLD_FRAME_ID);
 
   // set allowed planning time
-  move_group_ptr->setPlanningTime(60.0f);
+  move_group_ptr->setPlanningTime(1.0f);
+
+
 
   // move the robot to each wrist place pose
   for(unsigned int i = 0; i < place_poses.size(); i++)
   {
+    std::vector<geometry_msgs::Pose> waypoints;
   	moveit_msgs::RobotState robot_state;
   	if(i==0 || i == 1)
   	{
@@ -45,12 +49,41 @@ void collision_avoidance_pick_and_place::PickAndPlace::place_box(std::vector<geo
       set_attached_object(false,geometry_msgs::Pose(),robot_state);
       show_box(false);
   	}
+    waypoints.push_back(place_poses[i]);
 
   	// create motion plan
     moveit::planning_interface::MoveGroup::Plan plan;
-    success = create_motion_plan(place_poses[i],robot_state,plan,0) && move_group_ptr->execute(plan);
+    //success = create_motion_plan(place_poses[i],robot_state,plan,0) && move_group_ptr->execute(plan);
+    moveit_msgs::RobotTrajectory trajectory_msg;
 
-    if(success)
+    double fraction = move_group_ptr->computeCartesianPath(waypoints,
+                                                 0.01,  // eef_step
+                                                 0.0,   // jump_threshold
+                                                 trajectory_msg, false);
+
+    // The trajectory needs to be modified so it will include velocities as well.
+    // First to create a RobotTrajectory object
+    robot_trajectory::RobotTrajectory rt(move_group_ptr->getCurrentState()->getRobotModel(), "manipulator");
+
+    // Second get a RobotTrajectory from trajectory
+    rt.setRobotTrajectoryMsg(*move_group_ptr->getCurrentState(), trajectory_msg);
+
+    // Thrid create a IterativeParabolicTimeParameterization object
+    trajectory_processing::IterativeParabolicTimeParameterization iptp;
+
+    // Fourth compute computeTimeStamps
+    bool succes = iptp.computeTimeStamps(rt);
+    ROS_INFO("Computed time stamp %s",succes?"SUCCEDED":"FAILED");
+
+    // Get RobotTrajectory_msg from RobotTrajectory
+    rt.getRobotTrajectoryMsg(trajectory_msg);
+
+    // Finally plan and execute the trajectory
+    plan.trajectory_ = trajectory_msg;
+    ROS_INFO("Visualizing plan 4 (cartesian path) (%.2f%% acheived)",fraction * 100.0);
+    move_group_ptr->execute(plan);
+
+    if(fraction == 1.0)
     {
       ROS_INFO_STREAM("Place Move " << i <<" Succeeded");
     }
