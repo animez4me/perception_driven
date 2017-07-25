@@ -115,35 +115,35 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        kinect2_frame:
+        kinect_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        kinect2_ir_link:
+        kinect_ir_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        kinect2_ir_optical_frame:
+        kinect_ir_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        kinect2_keepout:
+        kinect_keepout:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        kinect2_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        kinect2_rgb_link:
+        kinect_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        kinect2_rgb_optical_frame:
+        kinect_rgb_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        kinect_rgb_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -163,6 +163,11 @@ Visualization Manager:
           Show Trail: false
           Value: true
         shoulder_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+	table_base1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -242,19 +247,19 @@ Visualization Manager:
           Value: false
         /gripper_frame:
           Value: false
-        /kinect2_frame:
+        /kinect_frame:
           Value: false
-        /kinect2_ir_link:
+        /kinect_ir_link:
           Value: false
-        /kinect2_ir_optical_frame:
+        /kinect_ir_optical_frame:
           Value: false
-        /kinect2_keepout:
+        /kinect_keepout:
           Value: false
-        /kinect2_link:
+        /kinect_link:
           Value: false
-        /kinect2_rgb_link:
+        /kinect_rgb_link:
           Value: false
-        /kinect2_rgb_optical_frame:
+        /kinect_rgb_optical_frame:
           Value: false
         /left_wall2:
           Value: false
@@ -325,15 +330,15 @@ Visualization Manager:
                                   {}
                           /wrist_3_padding:
                             {}
-            /kinect2_keepout:
+            /kinect_keepout:
               {}
-            /kinect2_link:
-              /kinect2_frame:
-                /kinect2_ir_link:
-                  /kinect2_ir_optical_frame:
+            /kinect_link:
+              /kinect_frame:
+                /kinect_ir_link:
+                  /kinect_ir_optical_frame:
                     {}
-                  /kinect2_rgb_link:
-                    /kinect2_rgb_optical_frame:
+                  /kinect_rgb_link:
+                    /kinect_rgb_optical_frame:
                       {}
       Update Interval: 0
       Value: true

@@ -78,7 +78,7 @@
 			<collision>
 				<origin xyz="0 0 -0.05" rpy="0 0 1.57"/>
 				<xacro:workcell_geometry length="0.6"
-					 width="0.2" height="0.1">
+					 width="0.2" height="$0.1">
 					<material name="blue_transparent"/>
 				</xacro:workcell_geometry>
 			</collision>
