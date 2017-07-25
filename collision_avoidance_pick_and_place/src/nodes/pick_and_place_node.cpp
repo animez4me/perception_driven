@@ -2,6 +2,8 @@
 
 using namespace collision_avoidance_pick_and_place;
 
+
+
 // =============================== Main Thread ===============================
 int main(int argc,char** argv)
 {
@@ -55,6 +57,8 @@ int main(int argc,char** argv)
   // transform listener
   application.transform_listener_ptr = TransformListenerPtr(new tf::TransformListener());
 
+  application.transform_broadcaster = TransformBroadcasterPtr(new tf::TransformBroadcaster());
+
   // marker publisher (rviz visualization)
   application.marker_publisher = nh.advertise<visualization_msgs::Marker>(
 		  application.cfg.MARKER_TOPIC,1);
@@ -87,34 +91,44 @@ int main(int argc,char** argv)
   /* Pick & Place Tasks                      */
   /* ========================================*/
 
-  // move to a "clear" position
-  application.move_to_wait_position();
+//  bool quit = false;
 
-  // turn off vacuum gripper
-  application.set_gripper(false);
+//  while(!quit) {  
 
-  // get the box position and orientation
-  //box_pose = application.detect_box_pick();
-  box_pose = application.detect_object();
 
-  // build a sequence of poses to "pick" the box
-  pick_poses = application.create_pick_moves(box_pose);
+    // move to a "clear" position
+    application.move_to_wait_position();
 
-  // plan/execute the sequence of "pick" moves
-  application.pickup_box(pick_poses,box_pose);
+    // turn off vacuum gripper
+    application.set_gripper(false);
 
-  drink_poses = application.create_drink_moves();
+    // get the box position and orientation
+    //box_pose = application.detect_box_pick();
+    //box_pose = application.detect_object();
+    box_pose = application.detect_coke();
 
-  application.move_to_drink(drink_poses,box_pose);
+    // build a sequence of poses to "pick" the box
+    pick_poses = application.create_pick_moves(box_pose);
 
-  // build a sequence of poses to "place" the box
-  place_poses = application.create_place_moves();
+    // plan/execute the sequence of "pick" moves
+    application.pickup_box(pick_poses,box_pose);
 
-  // plan/execute the "place" moves
-  application.place_box(place_poses,box_pose);
+    drink_poses = application.create_drink_moves();
 
-  // move back to the "clear" position
-  application.move_to_wait_position();
+    application.move_to_drink(drink_poses,box_pose);
+
+    // build a sequence of poses to "place" the box
+    place_poses = application.create_place_moves();
+
+    // plan/execute the "place" moves
+    application.place_box(place_poses,box_pose);
+
+    // move back to the "clear" position
+    application.move_to_wait_position();
+
+//  }
 
   return 0;
 }
+
+

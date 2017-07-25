@@ -31,19 +31,20 @@
 sensor_msgs::PointCloud2 sensor_cloud_msg_;
 bool gotpt = false;
 bool gotobject = false;
-geometry_msgs::Pose box_pose;
+geometry_msgs::Pose selected_object_pose;
 
 ros::Publisher cloud_publisher;
 float clickedx;
 float clickedy;
 float clickedz;
 
-
 double Object_confidence = 0;
 std::vector<geometry_msgs::Pose> Object_poses;
 std::vector<std::string> Object_ids;
 std::string Object_id;
+std::string object;
 
+float coke_top;
 
 void point_cloud_callback(const sensor_msgs::PointCloud2ConstPtr msg)
 {
@@ -89,22 +90,11 @@ void click_callback(const geometry_msgs::PointStamped pt)
   tf::Transform tf_tf;  
   tf::poseMsgToTF(tf_pose, tf_tf);
 
-  //  typedef pcl::PointCloud<pcl::PointXYZ> Cloud;
-  //  Cloud::Ptr sensor_cloud_ptr(new Cloud());
-  //  pcl::fromROSMsg<pcl::PointXYZ>(sensor_cloud_msg_,*sensor_cloud_ptr);
-  //  // converting to world coordinates
-  //  Eigen::Affine3d eigen_3d;
-  //  tf::transformTFToEigen(tf_tf,eigen_3d);
-  //  Eigen::Affine3f eigen_3f(eigen_3d);
-  //  pcl::transformPointCloud(*sensor_cloud_ptr,*sensor_cloud_ptr,eigen_3f);
-  //  pcl::toROSMsg(*sensor_cloud_ptr, transformed_cloud);
   sensor_msgs::PointCloud2 transformed_cloud;
   pcl_ros::transformPointCloud("world_frame",tf_tf,sensor_cloud_msg_,transformed_cloud);
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg (transformed_cloud, *cloud);
-
-
 
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
   kdtree.setInputCloud (cloud);
@@ -194,7 +184,7 @@ void objectCallback(const object_recognition_msgs::RecognizedObjectArray objects
     tf::Transform tf_tf;
     tf::poseMsgToTF(tf_pose, tf_tf);
 
-    std::string object;
+
     geometry_msgs::Pose Object_pose;
     tf::Transform point;
     tf::TransformBroadcaster broadc;
@@ -205,8 +195,8 @@ void objectCallback(const object_recognition_msgs::RecognizedObjectArray objects
       Object_ids.push_back(objects_msg.objects[i].type.key.c_str());
 
       // Convert object pose to tf
-      tf::Transform box_tf;
-      tf::poseMsgToTF(Object_poses[i],box_tf);
+      tf::Transform object_tf;
+      tf::poseMsgToTF(Object_poses[i],object_tf);
 
       // Exit the program if object is not found
       if (!Object_poses[i].position.x){
@@ -237,7 +227,7 @@ void objectCallback(const object_recognition_msgs::RecognizedObjectArray objects
       // Perform frame transformation to find object pose in world_frame
       //  tf::Transform tf_tf, transformed;
 
-      tf::Transform transformed = tf_tf*box_tf;
+      tf::Transform transformed = tf_tf*object_tf;
       tf::poseTFToMsg(transformed,Object_pose);
 
       ROS_INFO("Pose X is: %f", Object_pose.position.x);
@@ -252,16 +242,18 @@ void objectCallback(const object_recognition_msgs::RecognizedObjectArray objects
       float objectx = Object_pose.position.x;
       float objecty = Object_pose.position.y;
       float objectz = Object_pose.position.z;
+      float object_height;
 
       //Compare distance of objects pose to the clicked point
       float distance = pow((clickedx - objectx),2) + pow((clickedy - objecty),2) + pow((clickedz - objectz),2);
 
       if (distance < oldDistance){
         Object_id = objects_msg.objects[i].type.key.c_str();
-        box_pose = Object_pose;
+        selected_object_pose = Object_pose;
 
         if (coke_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
           object = "coke";
+          selected_object_pose.position.z = selected_object_pose.position.z + coke_top;
         }
         else if (mug_id.compare(objects_msg.objects[i].type.key.c_str()) == 0){
           object = "mug";
@@ -278,14 +270,14 @@ void objectCallback(const object_recognition_msgs::RecognizedObjectArray objects
       ROS_INFO("Selected Object: %s", object.c_str());
       ROS_INFO("Distance: %f", distance);
     }
-    point.setOrigin(tf::Vector3(box_pose.position.x , box_pose.position.y,
-                                box_pose.position.z));
-    point.setRotation(tf::Quaternion(box_pose.orientation.x, box_pose.orientation.y,
-                                     box_pose.orientation.z, box_pose.orientation.w));
+    point.setOrigin(tf::Vector3(selected_object_pose.position.x , selected_object_pose.position.y,
+                                selected_object_pose.position.z));
+    point.setRotation(tf::Quaternion(selected_object_pose.orientation.x, selected_object_pose.orientation.y,
+                                     selected_object_pose.orientation.z, selected_object_pose.orientation.w));
     broadc.sendTransform(tf::StampedTransform(point, ros::Time::now(), "world_frame", "ORK"));
-    ROS_INFO("ORK Pose X is: %f", box_pose.position.x);
-    ROS_INFO("ORK Pose Y is: %f", box_pose.position.y);
-    ROS_INFO("ORK Pose Z is: %f", box_pose.position.z);
+    ROS_INFO("ORK Pose X is: %f", selected_object_pose.position.x);
+    ROS_INFO("ORK Pose Y is: %f", selected_object_pose.position.y);
+    ROS_INFO("ORK Pose Z is: %f", selected_object_pose.position.z);
     gotobject = true;
 }
 
@@ -293,8 +285,8 @@ geometry_msgs::Pose collision_avoidance_pick_and_place::PickAndPlace::detect_cok
 {
   ros::NodeHandle nh;
   tf::TransformBroadcaster bro;
-  //cloud_publisher = nh.advertise<sensor_msgs::PointCloud2>("points",1);
-
+  //cloud_publisher = nh.advertise<sensor_msgs::PointCloud2>("points",1);  
+  coke_top = cfg.COKE_SIZE[0] / 2;
 
   while(!gotpt){
     ros::Subscriber clicked_point_subscriber = nh.subscribe("/clicked_point",1,&click_callback);
@@ -313,19 +305,22 @@ geometry_msgs::Pose collision_avoidance_pick_and_place::PickAndPlace::detect_cok
 
   }  
 
-
+  // if object is coke, set global variable to coke
+  if (object.compare("coke") == 0){
+   cfg.selected_object = "coke";
+  }
 
     // updating box marker for visualization in rviz
     visualization_msgs::Marker marker = cfg.MARKER_MESSAGE;
     cfg.MARKER_MESSAGE.header.frame_id = cfg.WORLD_FRAME_ID;
-    cfg.MARKER_MESSAGE.pose = box_pose;
+    cfg.MARKER_MESSAGE.pose = selected_object_pose;
     // offset the box marker so the top surface is aligned with the axis rather than the centroid
-    //cfg.MARKER_MESSAGE.pose.position.z = box_pose.position.z - 0.5f*cfg.BOX_SIZE.z();
-    //cfg.MARKER_MESSAGE.pose.position.z = box_pose.position.z + 0.5f*cfg.BOX_SIZE.z();
+    //cfg.MARKER_MESSAGE.pose.position.z = selected_object_pose.position.z - 0.5f*cfg.BOX_SIZE.z();
+    //cfg.MARKER_MESSAGE.pose.position.z = selected_object_pose.position.z + 0.5f*cfg.BOX_SIZE.z();
 
     show_box(true);
 
-    return box_pose;
+    return selected_object_pose;
 
 }
 
@@ -373,7 +368,7 @@ geometry_msgs::Pose collision_avoidance_pick_and_place::PickAndPlace::detect_cok
 
 //  show_box(true);
 
-//  return box_pose;
+//  return selected_object_pose;
 //}
 
 //  if (firstCB == false && (int)objects_msg.objects.size() == 1) {

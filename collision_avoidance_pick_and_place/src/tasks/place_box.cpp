@@ -28,6 +28,8 @@ void collision_avoidance_pick_and_place::PickAndPlace::place_box(std::vector<geo
 
   // set allowed planning time
   move_group_ptr->setPlanningTime(1.0f);
+  move_group_ptr->setMaxVelocityScalingFactor(0.1);
+  move_group_ptr->setMaxAccelerationScalingFactor(0.1);
 
 
 
@@ -49,41 +51,43 @@ void collision_avoidance_pick_and_place::PickAndPlace::place_box(std::vector<geo
       set_attached_object(false,geometry_msgs::Pose(),robot_state);
       show_box(false);
   	}
-    waypoints.push_back(place_poses[i]);
+//    waypoints.push_back(place_poses[i]);
 
   	// create motion plan
     moveit::planning_interface::MoveGroup::Plan plan;
-    //success = create_motion_plan(place_poses[i],robot_state,plan,0) && move_group_ptr->execute(plan);
-    moveit_msgs::RobotTrajectory trajectory_msg;
+    success = create_motion_plan(place_poses[i],robot_state,plan,1) && move_group_ptr->execute(plan);
 
-    double fraction = move_group_ptr->computeCartesianPath(waypoints,
-                                                 0.01,  // eef_step
-                                                 0.0,   // jump_threshold
-                                                 trajectory_msg, false);
+//    moveit_msgs::RobotTrajectory trajectory_msg;
 
-    // The trajectory needs to be modified so it will include velocities as well.
-    // First to create a RobotTrajectory object
-    robot_trajectory::RobotTrajectory rt(move_group_ptr->getCurrentState()->getRobotModel(), "manipulator");
+//    double fraction = move_group_ptr->computeCartesianPath(waypoints,
+//                                                 0.01,  // eef_step
+//                                                 0.0,   // jump_threshold
+//                                                 trajectory_msg, false);
 
-    // Second get a RobotTrajectory from trajectory
-    rt.setRobotTrajectoryMsg(*move_group_ptr->getCurrentState(), trajectory_msg);
+//    // The trajectory needs to be modified so it will include velocities as well.
+//    // First to create a RobotTrajectory object
+//    robot_trajectory::RobotTrajectory rt(move_group_ptr->getCurrentState()->getRobotModel(), "manipulator");
 
-    // Thrid create a IterativeParabolicTimeParameterization object
-    trajectory_processing::IterativeParabolicTimeParameterization iptp;
+//    // Second get a RobotTrajectory from trajectory
+//    rt.setRobotTrajectoryMsg(*move_group_ptr->getCurrentState(), trajectory_msg);
 
-    // Fourth compute computeTimeStamps
-    bool succes = iptp.computeTimeStamps(rt);
-    ROS_INFO("Computed time stamp %s",succes?"SUCCEDED":"FAILED");
+//    // Thrid create a IterativeParabolicTimeParameterization object
+//    trajectory_processing::IterativeParabolicTimeParameterization iptp;
 
-    // Get RobotTrajectory_msg from RobotTrajectory
-    rt.getRobotTrajectoryMsg(trajectory_msg);
+//    // Fourth compute computeTimeStamps
+//    bool succes = iptp.computeTimeStamps(rt);
+//    ROS_INFO("Computed time stamp %s",succes?"SUCCEDED":"FAILED");
 
-    // Finally plan and execute the trajectory
-    plan.trajectory_ = trajectory_msg;
-    ROS_INFO("Visualizing plan 4 (cartesian path) (%.2f%% acheived)",fraction * 100.0);
-    move_group_ptr->execute(plan);
+//    // Get RobotTrajectory_msg from RobotTrajectory
+//    rt.getRobotTrajectoryMsg(trajectory_msg);
 
-    if(fraction == 1.0)
+//    // Finally plan and execute the trajectory
+//    plan.trajectory_ = trajectory_msg;
+//    ROS_INFO("Visualizing plan 4 (cartesian path) (%.2f%% acheived)",fraction * 100.0);
+//    move_group_ptr->execute(plan);
+
+//    if(fraction == 1.0)
+    if(success)
     {
       ROS_INFO_STREAM("Place Move " << i <<" Succeeded");
     }

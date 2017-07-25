@@ -83,10 +83,10 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
   std::vector<geometry_msgs::Pose> poses;
   tf::Transform prepare;
 
+
   prepare.setOrigin(tf::Vector3(0,0,-0.05));
   //prepare.setRotation(tf::Quaternion(tf::Vector3(1,0,0),M_PI));
-  prepare.setRotation(tf::Quaternion::getIdentity());
-  //transform_broadcaster.sendTransform(tf::StampedTransform(prepare, ros::Time::now(), "ORK", "pre_tf"));
+  prepare.setRotation(tf::Quaternion::getIdentity());  
   transform_broadcaster->sendTransform(tf::StampedTransform(prepare, ros::Time::now(), "world_to_tcp", "pre_tf"));
 
   ROS_INFO("transforming");

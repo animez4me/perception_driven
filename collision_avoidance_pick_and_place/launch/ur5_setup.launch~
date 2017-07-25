@@ -35,8 +35,11 @@
     <include file="$(find sensor_config)/launch/ur5_sensor_setup.launch"/>
 
     <!-- detection node -->
-    <include file="$(find collision_avoidance_pick_and_place)/launch/ur5_target_recognition.launch"/>
-    
+    <include file="$(find collision_avoidance_pick_and_place)/launch/ur5_target_recognition.launch"/>    
+
+    <!--<node name="detection" pkg="object_recognition_core" type="detection" args="-c $(find object_recognition_linemod)/conf/kinect2.ork" output="screen" required="true"/>-->
+   <node pkg="object_recognition_ros" type="server" name="object_information_server" args="-c $(find object_recognition_linemod)/conf/kinect2.ork" output="screen" required="true"/>
+
     <!-- ar tag detection node -->	
      <node name="ar_pose" pkg="ar_pose" type="ar_multi" respawn="false">
       <remap from="/usb_cam/image_raw" to="/kinect2/qhd/image_color_rect"/>
@@ -53,7 +56,7 @@
 		
 		<!-- static ar_tag frame publisher for simulation -->
 		<!--<node pkg="tf" type="static_transform_publisher" name="world_to_tag" args="-0.8 0.2 0.17 0.785 0 0 world_frame ar_tag 100"/>-->
-		<node pkg="tf" type="static_transform_publisher" name="world_to_tag" args="-0.1 0.2 0.17 0.785 0 0 world_frame ar_tag 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="world_to_tag" args="-0.1 0.5 0.17 0.785 0 0 world_frame ar_tag 100"/>
 
 		<!-- detection node -->
 		<include file="$(find collision_avoidance_pick_and_place)/launch/ur5_target_recognition.launch"/>

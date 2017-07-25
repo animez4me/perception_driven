@@ -27,12 +27,13 @@ void collision_avoidance_pick_and_place::PickAndPlace::move_to_drink(std::vector
   move_group_ptr->setEndEffectorLink(cfg.WRIST_LINK_NAME);
   move_group_ptr->setPoseReferenceFrame(cfg.WORLD_FRAME_ID);
 
+  move_group_ptr->setMaxVelocityScalingFactor(0.1);
+  move_group_ptr->setMaxAccelerationScalingFactor(0.1);
+
 //  move_group_ptr->setPlannerId("RRTConnectkConfigDefault");
 
   // set allowed planning time
-  move_group_ptr->setPlanningTime(60.0f);
-
-
+  move_group_ptr->setPlanningTime(20.0f);
 
   std::vector<geometry_msgs::Pose> waypoints;
 
@@ -46,15 +47,9 @@ void collision_avoidance_pick_and_place::PickAndPlace::move_to_drink(std::vector
     set_attached_object(true,box_pose,robot_state);
     show_box(true);    
 
-
     //waypoints.push_back(place_poses[i]);
 
-//    place_pose.push_back(place_poses[i]);
-//    tf::StampedTransform tcp_to_wrist_tf;
-//    transform_listener_ptr->waitForTransform(cfg.TCP_LINK_NAME, cfg.WRIST_LINK_NAME,ros::Time(0.0f),ros::Duration(3.0f));
-//    transform_listener_ptr->lookupTransform(cfg.TCP_LINK_NAME, cfg.WRIST_LINK_NAME,ros::Time(0.0f),tcp_to_wrist_tf);
-//    wrist_pick_poses= transform_from_tcp_to_wrist(tcp_to_wrist_tf, place_pose);
-
+    ROS_INFO_STREAM("Orientation: " << place_poses[i].orientation);
 
     // create motion plan
     moveit::planning_interface::MoveGroup::Plan plan;

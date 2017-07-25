@@ -7,6 +7,7 @@
 #include <moveit_msgs/PlanningScene.h>
 #include <object_manipulation_msgs/GraspHandPostureExecutionAction.h>
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_eigen.h>
 #include <collision_avoidance_pick_and_place/pick_and_place_utilities.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
@@ -21,6 +22,8 @@ typedef actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPosture
 typedef boost::shared_ptr<GraspActionClient> GraspActionClientPtr;
 typedef boost::shared_ptr<moveit::planning_interface::MoveGroup> MoveGroupPtr;
 typedef boost::shared_ptr<tf::TransformListener> TransformListenerPtr;
+typedef boost::shared_ptr<tf::TransformBroadcaster> TransformBroadcasterPtr;
+
 
 namespace collision_avoidance_pick_and_place
 {
@@ -38,10 +41,13 @@ namespace collision_avoidance_pick_and_place
 		ros::Publisher marker_publisher;
 		ros::Publisher planning_scene_publisher;
 		ros::ServiceClient target_recognition_client;
+    ros::ServiceClient object_recognition_client;
 		ros::ServiceClient motion_plan_client;
 		GraspActionClientPtr grasp_action_client_ptr;
 		MoveGroupPtr move_group_ptr;
 		TransformListenerPtr transform_listener_ptr;
+    TransformBroadcasterPtr transform_broadcaster;
+
 
 	// =============================== Task Functions ===============================
 		void move_to_wait_position();
@@ -55,29 +61,39 @@ namespace collision_avoidance_pick_and_place
 
 		geometry_msgs::Pose detect_box_pick();
 
+    geometry_msgs::Pose detect_object();
+
+    geometry_msgs::Pose detect_coke();
+
 		std::vector<geometry_msgs::Pose> create_pick_moves(geometry_msgs::Pose &box_pose);
 
 		std::vector<geometry_msgs::Pose> create_place_moves();
+
+    std::vector<geometry_msgs::Pose> create_drink_moves();
 
 		void pickup_box(std::vector<geometry_msgs::Pose>& pick_poses,const geometry_msgs::Pose& box_pose);
 
 		void place_box(std::vector<geometry_msgs::Pose>& place_poses,const geometry_msgs::Pose& box_pose);
 
+    void move_to_drink(std::vector<geometry_msgs::Pose>& drink_poses,const geometry_msgs::Pose& box_pose);
 
-		bool create_motion_plan(const geometry_msgs::Pose &pose_target,
-        const moveit_msgs::RobotState &start_robot_state,moveit::planning_interface::MoveGroup::Plan &plan);
+    bool create_motion_plan(const geometry_msgs::Pose &pose_target,
+        const moveit_msgs::RobotState &start_robot_state, moveit::planning_interface::MoveGroup::Plan &plan, bool drink);
 
 		void show_box(bool show=true)
 		{
-			// updating marker action
-			cfg.MARKER_MESSAGE.action =
-					show ? visualization_msgs::Marker::ADD : visualization_msgs::Marker::DELETE;
+       //updating marker action
+      cfg.MARKER_MESSAGE.action =
+          show ? visualization_msgs::Marker::ADD : visualization_msgs::Marker::DELETE;
 
-			// publish messages
-			marker_publisher.publish(cfg.MARKER_MESSAGE);
-		}
+       //publish messages
+      marker_publisher.publish(cfg.MARKER_MESSAGE);
+    }
+    std::vector<geometry_msgs::Pose> create_pick_poses(double retreat_dis,double approach_dis,const tf::Transform &target_tf);
 
-	};
+    std::vector<geometry_msgs::Pose> create_place_poses(double retreat_dis,double approach_dis,const tf::Transform &target_tf);
+
+  };
 }
 
 #endif /* PICK_AND_PLACE_H_ */

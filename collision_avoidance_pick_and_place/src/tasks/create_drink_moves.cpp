@@ -41,7 +41,7 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
    * - The quaternion value "tf::Quaternion(M_PI, 0, M_PI/2.0f)" will point
    * 	the tcp's direction towards the box.
    */
-  world_to_tcp_tf.setRotation(tf::Quaternion(M_PI, 0, M_PI/2.0f));
+  world_to_tcp_tf.setRotation(tf::Quaternion(M_PI, 0, 0));
   //world_to_tcp_tf.setRotation(tf::Quaternion(tf::Vector3(1,0,0),M_PI));
 
 

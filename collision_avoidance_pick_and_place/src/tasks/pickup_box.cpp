@@ -49,6 +49,8 @@ void collision_avoidance_pick_and_place::PickAndPlace::pickup_box(std::vector<ge
 	   * 	for the reference frame.
 	   */
     move_group_ptr->setPoseReferenceFrame(cfg.WORLD_FRAME_ID);
+    move_group_ptr->setMaxVelocityScalingFactor(0.1);
+    move_group_ptr->setMaxAccelerationScalingFactor(0.1);
 
 	  // move the robot to each wrist pick pose
 	  for(unsigned int i = 0; i < pick_poses.size(); i++)
@@ -62,7 +64,7 @@ void collision_avoidance_pick_and_place::PickAndPlace::pickup_box(std::vector<ge
       /* - Look in the "create_motion_plan()" method to observe how an
         entire moveit motion plan is created.  */
       moveit::planning_interface::MoveGroup::Plan plan;
-
+      ROS_INFO_STREAM("Orientation: " << pick_poses[i].orientation);
       success = create_motion_plan(pick_poses[i],robot_state,plan,0) && move_group_ptr->execute(plan);
 
 	    // verifying move completion

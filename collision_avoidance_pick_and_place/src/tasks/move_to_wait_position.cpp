@@ -31,7 +31,8 @@ void collision_avoidance_pick_and_place::PickAndPlace::move_to_wait_position()
   // set allowed planning time
   move_group_ptr->setPlanningTime(1.0f);
 
-
+  move_group_ptr->setMaxVelocityScalingFactor(0.1);
+  move_group_ptr->setMaxAccelerationScalingFactor(0.1);
 
   /* Fill Code:
    * Goal:
@@ -41,6 +42,7 @@ void collision_avoidance_pick_and_place::PickAndPlace::move_to_wait_position()
    *  in the "success" variable
    */
   success = move_group_ptr->move();
+
   if(success)
   {
     ROS_INFO_STREAM("Move " << cfg.WAIT_POSE_NAME<< " Succeeded");

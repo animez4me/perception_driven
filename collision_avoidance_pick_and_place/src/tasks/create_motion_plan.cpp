@@ -18,7 +18,7 @@ bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,
     const moveit_msgs::RobotState &start_robot_state,moveit::planning_interface::MoveGroup::Plan &plan, bool drink)
 {
 	// constructing motion plan goal constraints
-  std::vector<double> position_tolerances(3,0.03f);
+  std::vector<double> position_tolerances(3,0.01f);
   std::vector<double> orientation_tolerances(3,0.03f);
 	geometry_msgs::PoseStamped p;
 	p.header.frame_id = cfg.WORLD_FRAME_ID;
@@ -29,7 +29,7 @@ bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,
   moveit_msgs::Constraints path_constraints;
 
   if (drink){
-    path_constraints= create_path_orientation_constraints(p.pose, 0.3,0.3,0.3,cfg.WRIST_LINK_NAME);
+    path_constraints= create_path_orientation_constraints(p.pose, 2*M_PI,0.1,0.1,cfg.WRIST_LINK_NAME);
     //move_group_ptr->setPathConstraints(path_constraints);
   }
   // creating motion plan request
@@ -41,7 +41,7 @@ bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,
   req.group_name = cfg.ARM_GROUP_NAME;
   req.goal_constraints.push_back(pose_goal);
   req.allowed_planning_time = 4.0f;
-  req.num_planning_attempts = 8;
+  req.num_planning_attempts = 2;
   req.planner_id = "RRTConnectkConfigDefault";
 
 
