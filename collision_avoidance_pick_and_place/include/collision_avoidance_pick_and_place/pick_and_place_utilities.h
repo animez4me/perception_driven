@@ -7,9 +7,16 @@
 #include <moveit_msgs/Constraints.h>
 #include <visualization_msgs/Marker.h>
 #include <collision_avoidance_pick_and_place/GetTargetPose.h>
+#include <tf/transform_listener.h>
+//#include <collision_avoidance_pick_and_place/pick_and_place.h>
 
-std::vector<geometry_msgs::Pose> create_manipulation_poses(double retreat_dis,
-		double approach_dis,const tf::Transform &target_tf);
+//std::vector<geometry_msgs::Pose> create_manipulation_poses(double retreat_dis,
+    //double approach_dis,const tf::Transform &target_tf);
+
+//typedef boost::shared_ptr<tf::TransformListener> TransformListenerPtr;
+//TransformListenerPtr transform_listener_ptrr;
+
+std::vector<geometry_msgs::Pose> create_drink_poses(const tf::Transform &target_tf);
 
 std::vector<geometry_msgs::Pose> transform_from_tcp_to_wrist(tf::Transform tcp_to_wrist_tf,
 		const std::vector<geometry_msgs::Pose> tcp_poses);
@@ -18,7 +25,8 @@ std::ostream& operator<<(std::ostream& os, const tf::Vector3 vec);
 std::ostream& operator<<(std::ostream& os, const geometry_msgs::Point pt);
 
 moveit_msgs::Constraints create_path_orientation_constraints(const geometry_msgs::Pose &goal_pose,
-		float x_tolerance,float y_tolerance,float z_tolerance,std::string link_name);
+    float x_tolerance,float y_tolerance,float z_tolerance,std::string link_name);
+
 
 
 class pick_and_place_config
@@ -36,21 +44,26 @@ public:
   std::string WAIT_POSE_NAME;  // Named pose for robot WAIT position (set in SRDF)
   tf::Vector3 BOX_SIZE;        // Size of the target box
   tf::Transform BOX_PLACE_TF;  // Transform from the WORLD frame to the PLACE location
+  tf::Transform PRE_DRINK_TF; // Transform from the world frame to the predrink location
   std::vector<std::string> TOUCH_LINKS; // List of links that the attached payload is allow to be in contact with
   double RETREAT_DISTANCE;     // Distance to back away from pick/place pose after grasp/release
   double APPROACH_DISTANCE;    // Distance to stand off from pick/place pose before grasp/release
+  std::vector<float> COKE_SIZE;  // Size of the coke can
 
   // =============================== Topic, services and action names ===============================
   std::string GRASP_ACTION_NAME;  // Action name used to control suction gripper
   std::string MARKER_TOPIC; // Topic for publishing visualization of attached object.
   std::string PLANNING_SCENE_TOPIC; // Topic for publishing the planning scene
   std::string TARGET_RECOGNITION_SERVICE; // service for requesting box pick pose
+  std::string OBJECT_RECOGNITION_SERVICE; // service for requesting box pick pose
   std::string MOTION_PLAN_SERVICE; // service for requesting moveit for a motion plan
 
   // =============================== Messages and variables ===============================
   visualization_msgs::Marker MARKER_MESSAGE; // visual representation of target object
   moveit_msgs::CollisionObject ATTACHED_OBJECT; // attached object message
   geometry_msgs::Pose TCP_TO_BOX_POSE;
+  std::string selected_object;
+
 
   pick_and_place_config()
   {
@@ -59,6 +72,7 @@ public:
     MARKER_TOPIC = "pick_and_place_marker";
     PLANNING_SCENE_TOPIC = "planning_scene";
     TARGET_RECOGNITION_SERVICE = "target_recognition";
+    OBJECT_RECOGNITION_SERVICE = "object_recognition";
     MOTION_PLAN_SERVICE = "plan_kinematic_path";
     WRIST_LINK_NAME = "ee_link";
     ATTACHED_OBJECT_LINK_NAME = "attached_object_link";
@@ -67,11 +81,12 @@ public:
     WAIT_POSE_NAME  = "wait";
     AR_TAG_FRAME_ID    = "ar_frame";
     GRASP_ACTION_NAME = "grasp_execution_action";
-    BOX_SIZE        = tf::Vector3(0.1f, 0.1f, 0.1f);
+    BOX_SIZE        = tf::Vector3(0.1f, 0.1f, 0.1f);    
     BOX_PLACE_TF    = tf::Transform(tf::Quaternion::getIdentity(), tf::Vector3(-0.8f,-0.2f,BOX_SIZE.getZ()));
+    PRE_DRINK_TF    = tf::Transform(tf::Quaternion::getIdentity(), tf::Vector3(0, 0, 0));
     TOUCH_LINKS = std::vector<std::string>();
     RETREAT_DISTANCE  = 0.05f;
-    APPROACH_DISTANCE = 0.05f;
+    APPROACH_DISTANCE = 0.05f;    
   }
 
   bool init();

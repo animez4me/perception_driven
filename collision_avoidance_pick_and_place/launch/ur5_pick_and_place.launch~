@@ -1,8 +1,12 @@
 <?xml version="1.0"?>
 <launch>
 
+  <!-- ORK linemod node -->
+  <!--<node name="detection" pkg="object_recognition_core" type="detection" args="-c $(find object_recognition_linemod)/conf/kinect2.ork" output="screen" required="true"/>-->
+
+
   <!-- pick and place node -->
-  <node pkg="collision_avoidance_pick_and_place" type="pick_and_place_node" name="pick_and_place_node" output="screen" launch-prefix="gdb -ex run --args" required="true">
+  <node pkg="collision_avoidance_pick_and_place" type="pick_and_place_node" name="pick_and_place_node" output="screen" required="true">
     <rosparam command="load" file="$(find collision_avoidance_pick_and_place)/config/ur5/pick_and_place_parameters.yaml"/>
   </node>
 
@@ -11,6 +15,8 @@
   </include>
 
   <rosparam command="load" file="$(find ur5_collision_avoidance_moveit_config)/config/joint_names.yaml"/>
+
+  <param name="move_group/trajectory_execution/execution_duration_monitoring" value="false" />
 
   <include file="$(find ur5_collision_avoidance_moveit_config)/launch/default_warehouse_db.launch" />
 

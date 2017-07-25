@@ -2,11 +2,13 @@
 
 using namespace collision_avoidance_pick_and_place;
 
+
+
 // =============================== Main Thread ===============================
 int main(int argc,char** argv)
 {
   geometry_msgs::Pose box_pose;
-  std::vector<geometry_msgs::Pose> pick_poses, place_poses;
+  std::vector<geometry_msgs::Pose> pick_poses, place_poses, drink_poses;
 
   /* =========================================================================================*/
   /*	INITIALIZING ROS NODE
@@ -55,13 +57,17 @@ int main(int argc,char** argv)
   // transform listener
   application.transform_listener_ptr = TransformListenerPtr(new tf::TransformListener());
 
+  application.transform_broadcaster = TransformBroadcasterPtr(new tf::TransformBroadcaster());
+
   // marker publisher (rviz visualization)
   application.marker_publisher = nh.advertise<visualization_msgs::Marker>(
 		  application.cfg.MARKER_TOPIC,1);
 
   // target recognition client (perception)
-  application.target_recognition_client = nh.serviceClient<collision_avoidance_pick_and_place::GetTargetPose>(
-		  application.cfg.TARGET_RECOGNITION_SERVICE);
+  //application.target_recognition_client = nh.serviceClient<collision_avoidance_pick_and_place::GetTargetPose>(
+      //application.cfg.TARGET_RECOGNITION_SERVICE);
+  application.object_recognition_client = nh.serviceClient<collision_avoidance_pick_and_place::GetTargetPose>(
+      application.cfg.OBJECT_RECOGNITION_SERVICE);
 
   // grasp action client (vacuum gripper)
   application.grasp_action_client_ptr = GraspActionClientPtr(
@@ -85,29 +91,44 @@ int main(int argc,char** argv)
   /* Pick & Place Tasks                      */
   /* ========================================*/
 
-  // move to a "clear" position
-  application.move_to_wait_position();
+//  bool quit = false;
 
-  // turn off vacuum gripper
-  application.set_gripper(false);
+//  while(!quit) {  
 
-  // get the box position and orientation
-  box_pose = application.detect_box_pick();
 
-  // build a sequence of poses to "pick" the box
-  pick_poses = application.create_pick_moves(box_pose);
+    // move to a "clear" position
+    application.move_to_wait_position();
 
-  // plan/execute the sequence of "pick" moves
-  application.pickup_box(pick_poses,box_pose);
+    // turn off vacuum gripper
+    application.set_gripper(false);
 
-  // build a sequence of poses to "place" the box
-  place_poses = application.create_place_moves();
+    // get the box position and orientation
+    //box_pose = application.detect_box_pick();
+    //box_pose = application.detect_object();
+    box_pose = application.detect_coke();
 
-  // plan/execute the "place" moves
-  application.place_box(place_poses,box_pose);
+    // build a sequence of poses to "pick" the box
+    pick_poses = application.create_pick_moves(box_pose);
 
-  // move back to the "clear" position
-  application.move_to_wait_position();
+    // plan/execute the sequence of "pick" moves
+    application.pickup_box(pick_poses,box_pose);
+
+    drink_poses = application.create_drink_moves();
+
+    application.move_to_drink(drink_poses,box_pose);
+
+    // build a sequence of poses to "place" the box
+    place_poses = application.create_place_moves();
+
+    // plan/execute the "place" moves
+    application.place_box(place_poses,box_pose);
+
+    // move back to the "clear" position
+    application.move_to_wait_position();
+
+//  }
 
   return 0;
 }
+
+

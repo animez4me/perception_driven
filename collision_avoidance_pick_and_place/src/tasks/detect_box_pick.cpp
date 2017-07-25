@@ -44,43 +44,45 @@ geometry_msgs::Pose collision_avoidance_pick_and_place::PickAndPlace::detect_box
    * 	*/
   geometry_msgs::Pose box_pose;
 
-  if(target_recognition_client.call(srv))
-  {    
+  //if(target_recognition_client.call(srv))
+  if(object_recognition_client.call(srv))
+  {
     if(srv.response.succeeded)
-	  {
+    {
       box_pose = srv.response.target_pose;
-		  ROS_INFO_STREAM("target recognition succeeded");
+      ROS_INFO_STREAM("target recognition succeeded");
       ROS_INFO_STREAM("x " << box_pose.position.x);
       ROS_INFO_STREAM("y " << box_pose.position.y);
       ROS_INFO_STREAM("z " << box_pose.position.z);
       // make box appear on top of axis
       box_pose.position.z = box_pose.position.z + cfg.BOX_SIZE.z();
-	  }
-	  else
-	  {
-		  ROS_ERROR_STREAM("target recognition failed");
-		  exit(0);
+    }
+    else
+    {
+      ROS_ERROR_STREAM("target recognition failed");
+      exit(0);
 
-	  }
+    }
   }
   else
   {
 
-	  ROS_ERROR_STREAM("Service call for target recognition failed with response '"<<
-			  (srv.response.succeeded ?"SUCCESS":"FAILURE")
-					  <<"', exiting");
-	  exit(0);
+    ROS_ERROR_STREAM("Service call for target recognition failed with response '"<<
+        (srv.response.succeeded ?"SUCCESS":"FAILURE")
+            <<"', exiting");
+    exit(0);
   }
 
   // updating box marker for visualization in rviz
-	visualization_msgs::Marker marker = cfg.MARKER_MESSAGE;
-	cfg.MARKER_MESSAGE.header.frame_id = cfg.WORLD_FRAME_ID;
-	cfg.MARKER_MESSAGE.pose = box_pose;
+  visualization_msgs::Marker marker = cfg.MARKER_MESSAGE;
+  cfg.MARKER_MESSAGE.header.frame_id = cfg.WORLD_FRAME_ID;
+  cfg.MARKER_MESSAGE.pose = box_pose;
   // offset the box marker so the top surface is aligned with the axis rather than the centroid
   cfg.MARKER_MESSAGE.pose.position.z = box_pose.position.z - 0.5f*cfg.BOX_SIZE.z();
   //cfg.MARKER_MESSAGE.pose.position.z = box_pose.position.z + 0.5f*cfg.BOX_SIZE.z();
 
-	show_box(true);
+  show_box(true);
+
 
 	return box_pose;
 }

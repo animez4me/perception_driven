@@ -18,6 +18,7 @@
         <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
 	<!--<include file="$(find openni_launch)/launch/openni.launch">-->
 		<arg name="publish_tf" default="true" />
+    		<arg name="depth_method" default="cpu" />
 		<!--<arg name="camera" default="kinect2" />-->
 			<!--arg name="launch_prefix" default="" /-->
 		<!--<arg name="rgb_frame_id" default="kinect2_rgb_optical_frame"/>

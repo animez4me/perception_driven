@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- target recognition node -->
+  <!--<remap from="sensor_cloud" to="/kinect/depth_registered/points"/>-->
+  <remap from="sensor_cloud" to="/kinect2/qhd/points"/>
+  <!--<remap from="sensor_cloud" to="/camera/depth_registered/points"/>-->
+  <node pkg="collision_avoidance_pick_and_place" type="target_recognition_service" name="target_recognition_service" output="screen">
+  <!--<node pkg="collision_avoidance_pick_and_place" type="object_recognition_service" name="object_recognition_service" output="screen">-->
+	
+	<rosparam command="load" file="$(find collision_avoidance_pick_and_place)/config/ur5/target_recognition_parameters.yaml"/>
+  </node> 
+  
+  <node pkg="object_recognition_ros" type="object_information_server" name="server" output="screen">
+
+</node>
+  
+
+</launch>
