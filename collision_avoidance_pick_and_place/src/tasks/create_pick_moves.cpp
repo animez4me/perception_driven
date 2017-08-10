@@ -45,7 +45,9 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
 
   // create all the poses for tcp's pick motion (approach, pick and retreat)
   tcp_pick_poses = create_pick_poses(cfg.RETREAT_DISTANCE, cfg.APPROACH_DISTANCE, world_to_tcp_tf);
-
+  if (tcp_pick_poses.size() == 0){
+    return tcp_pick_poses;
+  }
   /* Fill Code:
    * Goal:
    * - Find transform from tcp to wrist.
@@ -86,30 +88,37 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
 
   prepare.setOrigin(tf::Vector3(0,0,-0.05));
   //prepare.setRotation(tf::Quaternion(tf::Vector3(1,0,0),M_PI));
-  prepare.setRotation(tf::Quaternion::getIdentity());  
+  prepare.setRotation(tf::Quaternion::getIdentity());
+  //prepare.setRotation(target_tf.getRotation());
   transform_broadcaster->sendTransform(tf::StampedTransform(prepare, ros::Time::now(), "world_to_tcp", "pre_tf"));
+  //world_to_tcp is in world_frame
 
   ROS_INFO("transforming");
 
-  tf::StampedTransform pre_to_ORK_tf, ORK_to_kinect_tf, kinect_to_world_tf;
+  tf::StampedTransform pre_to_ORK_tf, ORK_to_kinect_tf, kinect_to_world_tf, pre_to_kinect_tf, kinect_world_tf;
+  //tf::StampedTransform pre_to_world_tf;
   try{
-    transform_listener_ptr->waitForTransform("pre_tf", "world_to_tcp", ros::Time(0.0f), ros::Duration(3.0f));
-    transform_listener_ptr->lookupTransform("pre_tf", "world_to_tcp", ros::Time(0.0f), pre_to_ORK_tf);
+    transform_listener_ptr->waitForTransform("world_to_tcp", "pre_tf", ros::Time(0.0f), ros::Duration(3.0f));
+    transform_listener_ptr->lookupTransform("world_to_tcp", "pre_tf", ros::Time(0.0f), pre_to_ORK_tf);
     //        transform_listener_ptr->waitForTransform("pre_tf", "ORK", ros::Time(0.0f), ros::Duration(3.0f));
     //        transform_listener_ptr->lookupTransform("pre_tf", "ORK", ros::Time(0.0f), pre_to_ORK_tf);
     //        transform_listener_ptr->waitForTransform("ORK", "kinect2_rgb_optical_frame", ros::Time(0.0f), ros::Duration(3.0f));
     //        transform_listener_ptr->lookupTransform("ORK", "kinect2_rgb_optical_frame", ros::Time(0.0f), pre_to_ORK_tf);
     //        transform_listener_ptr->waitForTransform("kinect2_rgb_optical_frame", "world_frame", ros::Time(0.0f), ros::Duration(3.0f));
     //        transform_listener_ptr->lookupTransform("kinect2_rgb_optical_frame", "world_frame", ros::Time(0.0f), pre_to_ORK_tf);
+//    transform_listener_ptr->waitForTransform("world_frame", "pre_tf", ros::Time(0.0f), ros::Duration(3.0f));
+//    transform_listener_ptr->lookupTransform("world_frame", "pre_tf", ros::Time(0.0f), pre_to_world_tf);
 
   }
   catch (tf::TransformException ex){
     ROS_ERROR("%s",ex.what());
-    exit(1);
+    //exit(1);
+    return poses;
   }
 
   //tf::Transform pre_to_world_tf = pre_to_ORK_tf * ORK_to_kinect_tf * kinect_to_world_tf;
-  tf::Transform pre_to_world_tf = pre_to_ORK_tf * target_tf;
+  tf::Transform pre_to_world_tf = target_tf * pre_to_ORK_tf;
+  transform_broadcaster->sendTransform(tf::StampedTransform(pre_to_world_tf, ros::Time::now(), "world_frame", "pre_tf2"));
 
   // converting target pose
   tf::poseTFToMsg(target_tf,target_pose);

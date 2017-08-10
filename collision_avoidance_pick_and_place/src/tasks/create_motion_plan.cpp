@@ -29,7 +29,7 @@ bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,
   moveit_msgs::Constraints path_constraints;
 
   if (drink){
-    path_constraints= create_path_orientation_constraints(p.pose, 2*M_PI,0.1,0.1,cfg.WRIST_LINK_NAME);
+    path_constraints= create_path_orientation_constraints(p.pose, 2*M_PI,0.3,0.3,cfg.WRIST_LINK_NAME);
     //move_group_ptr->setPathConstraints(path_constraints);
   }
   // creating motion plan request
@@ -40,9 +40,11 @@ bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,
   req.start_state.is_diff = true; //related to clearing attached object
   req.group_name = cfg.ARM_GROUP_NAME;
   req.goal_constraints.push_back(pose_goal);
-  req.allowed_planning_time = 4.0f;
-  req.num_planning_attempts = 2;
+  req.allowed_planning_time = 30.0f;
+  req.num_planning_attempts = 1;
   req.planner_id = "RRTConnectkConfigDefault";
+  req.max_acceleration_scaling_factor = 0.5f;
+  req.max_velocity_scaling_factor = 0.5f;
 
 
   if(drink){
