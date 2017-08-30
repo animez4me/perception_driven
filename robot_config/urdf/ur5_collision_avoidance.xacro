@@ -15,7 +15,7 @@
     <xacro:property name="arm_prefix" value=""/>
 
     <!-- instantiating arm and gripper -->
-    <xacro:ur5_robot prefix="" joint_limited="true"/>
+    <xacro:ur5_robot prefix="" joint_limited="false"/>
     <xacro:vacuum_gripper_definition prefix="${arm_prefix}" gripper_adjustment="0.01"/>
 
     <!-- instantiating workcell definitions -->
@@ -25,7 +25,7 @@
     <!-- arm-workcell link definitions -->
     <link name="ur5_stand">
             <visual>
-		<origin xyz="0 0 -0.35" rpy="0 0 0"/>
+		<origin xyz="0 0 -0.425" rpy="0 0 0"/>
                     <geometry>
                             <!--<cylinder radius="0.0735" length="${robot_stand_height}"/>-->
 			
@@ -34,7 +34,7 @@
                     <material name="orange_transparent"/>
             </visual>
             <collision>
-		<origin xyz="0 0 -0.35" rpy="0 0 0"/>
+		<origin xyz="0 0 -0.425" rpy="0 0 0"/>
                     <geometry>
                             <!--<cylinder radius="0.0735" length="${robot_stand_height}"/>-->
 				<box size = "0.35 0.35 0.85"/>
@@ -47,7 +47,7 @@
     <link name="base_padding">
             <collision>
                     <geometry>
-                            <cylinder radius="0.14" length="${robot_stand_height * 2}"/>
+                            <cylinder radius="0.14" length="0.5"/>
                     </geometry>
                     <material name="blue_transparent"/>
             </collision>
@@ -59,8 +59,9 @@
 
     <!--<xacro:sensor_definitions prefix="${arm_prefix}" parent_link="world_frame"
             x_val="-0.4" y_val="0.4" z_val="0.5" pitch="0" yaw="0" roll="0" />-->
-    <xacro:sensor_definitions prefix="${arm_prefix}" parent_link="world_frame"
-            x_val="-0.4" y_val="0.4" z_val="0.5" pitch="0" yaw="0" roll="0" />
+   <xacro:sensor_definitions prefix="${arm_prefix}" parent_link="base_link"
+            x_val="-0.936186" y_val="0.28311" z_val="0.443623" roll="-2.14627" pitch="-0.015539" yaw="-1.23815" />
+
     <!-- end of sensor definitions -->
 
     <joint name="world_to_stand" type="fixed">
@@ -73,7 +74,8 @@
     <joint name="world_to_base_padding" type="fixed">
             <parent link="world_frame"/>
             <child link="base_padding"/>
-            <origin xyz="-0.4 0.25 0"/>
+            <!--<origin xyz="-0.4 0.5 0"/>-->
+	    <origin xyz="-0.4 0.5 0"/>
     </joint>
 
 
@@ -83,7 +85,7 @@
     <joint name="stand_to_base" type="fixed">
             <parent link="ur5_stand"/>
             <child link="${arm_prefix}base_link"/>
-            <origin xyz="0 0 ${robot_stand_height * 0.5}" rpy="0 0 2.355"/>
+            <origin xyz="0 0 0" rpy="0 0 2.355"/>
     </joint>
 
     <!-- end of arm workcell joint definitions-->

@@ -82,7 +82,7 @@
 					<material name="blue_transparent"/>
 				</xacro:workcell_geometry>
 			</collision>
-		</link>
+		</link>		
 
 		<joint name="workcell_to_table_base1" type="fixed">
 			<parent link="world_frame"/>
@@ -90,14 +90,58 @@
 			<origin xyz="0 0.2 -0.1" rpy="0 0 0"/>
 		</joint>
 
+		<link name="table">
+			<visual>
+				<origin xyz="0 0 -0.0125" rpy="0 0 0"/>
+				
+				<xacro:workcell_geometry length="1.2" 
+					width="0.8" height="0.025">
+					<material name="orange_transparent"/>
+				</xacro:workcell_geometry>
+			</visual>
+			<collision>
+				<origin xyz="0 0 -0.0125" rpy="0 0 0"/>
+				<xacro:workcell_geometry length="1.2"
+					 width="0.8" height="0.025">
+					<material name="blue_transparent"/>
+				</xacro:workcell_geometry>
+			</collision>
+		</link>		
+
+		<joint name="workcell_to_table" type="fixed">
+			<parent link="world_frame"/>
+			<child link="table"/>
+			<origin xyz="0.25 0.7 -0.1" rpy="0 0 0"/>
+		</joint>		
+		<link name="roof">
+			<visual>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<xacro:workcell_geometry length="1.5"
+					 width="1.5" height="0.1">
+					<material name="blue_transparent"/>
+				</xacro:workcell_geometry>
+			</visual>
+			<collision>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<xacro:workcell_geometry length="1.5"
+					 width="1.5" height="0.1">
+					<material name="blue_transparent"/>
+				</xacro:workcell_geometry>
+			</collision>
+		</link>
+		<joint name="workcell_to_roof" type="fixed">
+			<parent link="world_frame"/>
+			<child link="roof"/>
+			<origin xyz="0 0 0.65" rpy="0 0 0"/>
+		</joint>
+		<xacro:workcell_element name="right_wall1" parent="world_frame"
+			 length="1.5" width="0.1" height="1.2" offset_x="0" offset_y="-0.3"/>
 		<!--<xacro:workcell_element name="front_wall1" parent="world_frame"
 			 length="0.1" width="2.220" height="${workcell_height}" offset_x="1.3375" offset_y="0"/>
-		<xacro:workcell_element name="back_wall1" parent="world_frame"
-			 length="0.04" width="2.00" height="${workcell_height}" offset_x="0.02" offset_y="0"/>
+		
 		<xacro:workcell_element name="left_wall1" parent="world_frame"
-			 length="1.221" width="0.1" height="${workcell_height}" offset_x="0.687" offset_y="1.060"/>
-		<xacro:workcell_element name="right_wall1" parent="world_frame"
-			 length="1.221" width="0.1" height="${workcell_height}" offset_x="0.687" offset_y="-1.060"/>-->
+			 length="1.221" width="0.1" height="${workcell_height}" offset_x="0.687" offset_y="1.060"/>-->
+		
 	</xacro:macro>
 	<!-- end of workcell part1 components macro -->	
 
