@@ -40,16 +40,20 @@ bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,
   req.start_state.is_diff = true; //related to clearing attached object
   req.group_name = cfg.ARM_GROUP_NAME;
   req.goal_constraints.push_back(pose_goal);
-  req.allowed_planning_time = 30.0f;
+
   req.num_planning_attempts = 1;
   req.planner_id = "RRTConnectkConfigDefault";
-  req.max_acceleration_scaling_factor = 0.5f;
-  req.max_velocity_scaling_factor = 0.5f;
+  req.max_acceleration_scaling_factor = 1.0f;
+  req.max_velocity_scaling_factor = 1.0f;
 
 
   if(drink){
     req.path_constraints = path_constraints;
+    req.allowed_planning_time = 10.0f;
     //req.goal_constraints.push_back(path_constraints);
+  }
+  else {
+    req.allowed_planning_time = 0.5f;
   }
 
 

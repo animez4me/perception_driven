@@ -7,8 +7,8 @@ using namespace collision_avoidance_pick_and_place;
 // =============================== Main Thread ===============================
 int main(int argc,char** argv)
 {
-  geometry_msgs::Pose box_pose;
-  std::vector<geometry_msgs::Pose> pick_poses, place_poses, drink_poses;
+  geometry_msgs::Pose object_pose;
+  std::vector<geometry_msgs::Pose> pick_poses, place_poses, drink_poses, cereal_poses;
 
   /* =========================================================================================*/
   /*	INITIALIZING ROS NODE
@@ -91,9 +91,9 @@ int main(int argc,char** argv)
   /* Pick & Place Tasks                      */
   /* ========================================*/
 
-//  bool quit = false;
+  bool quit = false;
 
-//  while(!quit) {  
+  while(!quit) {
 
 
     // move to a "clear" position
@@ -102,31 +102,62 @@ int main(int argc,char** argv)
     // turn off vacuum gripper
     application.set_gripper(false);
 
-    // get the box position and orientation
-    //box_pose = application.detect_box_pick();
-    //box_pose = application.detect_object();
-    box_pose = application.detect_coke();
+    // get the object position and orientation
+    object_pose = application.detect_coke();
 
-    // build a sequence of poses to "pick" the box
-    pick_poses = application.create_pick_moves(box_pose);
 
-    // plan/execute the sequence of "pick" moves
-    application.pickup_box(pick_poses,box_pose);
+    // build a sequence of poses to "pick" the object
+    pick_poses = application.create_pick_moves(object_pose);
 
-    drink_poses = application.create_drink_moves();
+    if (pick_poses.size() == 0){
+      //continue;
+    }
+    else {
 
-    application.move_to_drink(drink_poses,box_pose);
+      // plan/execute the sequence of "pick" moves
+      application.pickup_object(pick_poses);
 
-    // build a sequence of poses to "place" the box
-    place_poses = application.create_place_moves();
 
-    // plan/execute the "place" moves
-    application.place_box(place_poses,box_pose);
+      if (application.cfg.selected_object.compare("cereal") == 0){
 
-    // move back to the "clear" position
-    application.move_to_wait_position();
+//        application.cartesian_move();
+        cereal_poses = application.create_cereal_moves();
+//        application.move_to_drink(cereal_poses,object_pose);
+//        application.pickup_object(cereal_poses);
+        application.place_object(cereal_poses,object_pose);
 
-//  }
+        // build a sequence of poses to "place" the box
+        place_poses = application.create_place_moves();
+        ros::Duration(2).sleep();
+        // plan/execute the "place" moves
+        application.place_object(place_poses,object_pose);
+
+      }
+      else { //mug or coke
+
+        //        drink_poses = application.create_drink_moves();
+        //        application.place_object(drink_poses,object_pose);
+
+        //not using move_to_drink atm
+//        application.move_to_drink(drink_poses,object_pose);
+
+        // build a sequence of poses to "place" the box
+        place_poses = application.create_place_moves();
+
+        // plan/execute the "place" moves
+        application.place_object(place_poses,object_pose);
+      }
+
+      // To allow manual removal of object before resetting
+      ros::Duration(5).sleep();
+
+
+      // move back to the "clear" position
+//      application.move_to_wait_position();
+    }
+//    quit = true;
+
+  }
 
   return 0;
 }

@@ -17,6 +17,7 @@ void collision_avoidance_pick_and_place::PickAndPlace::move_to_drink(std::vector
 
   // task variables
   bool success;
+  bool orientation_constrained = true;
 
   /* Fill Code:
    * Goal:
@@ -27,77 +28,46 @@ void collision_avoidance_pick_and_place::PickAndPlace::move_to_drink(std::vector
   move_group_ptr->setEndEffectorLink(cfg.WRIST_LINK_NAME);
   move_group_ptr->setPoseReferenceFrame(cfg.WORLD_FRAME_ID);
 
-  move_group_ptr->setMaxVelocityScalingFactor(0.1);
-  move_group_ptr->setMaxAccelerationScalingFactor(0.1);
+  move_group_ptr->setMaxVelocityScalingFactor(1.0);
+  move_group_ptr->setMaxAccelerationScalingFactor(1.0);
 
 //  move_group_ptr->setPlannerId("RRTConnectkConfigDefault");
 
   // set allowed planning time
-  move_group_ptr->setPlanningTime(20.0f);
+  //move_group_ptr->setPlanningTime(20.0f);
 
   std::vector<geometry_msgs::Pose> waypoints;
+  int count =0;
 
   // move the robot to each wrist place pose
   for(unsigned int i = 0; i < place_poses.size(); i++)
   {
-    moveit_msgs::RobotState robot_state;
-    std::vector<geometry_msgs::Pose> wrist_pick_poses, place_pose;
+    moveit_msgs::RobotState robot_state;    
 
     // attaching box
+    show_box(true);
     set_attached_object(true,box_pose,robot_state);
-    show_box(true);    
-
-    //waypoints.push_back(place_poses[i]);
-
-    ROS_INFO_STREAM("Orientation: " << place_poses[i].orientation);
 
     // create motion plan
     moveit::planning_interface::MoveGroup::Plan plan;
-    //success = create_motion_plan(wrist_pick_poses[0],robot_state,plan,1) && move_group_ptr->execute(plan);
-    success = create_motion_plan(place_poses[i],robot_state,plan,1) && move_group_ptr->execute(plan);
-    if(success)
-    {
-      ROS_INFO_STREAM("Drink Move " << i <<" Succeeded");
+    while(!success) {
+      count++;
+      success = create_motion_plan(place_poses[i],robot_state,plan,orientation_constrained) && move_group_ptr->execute(plan);
+      if(success)
+      {
+        ROS_INFO_STREAM("Drink Move " << i <<" Succeeded");
+      }
+      else
+      {
+        ROS_ERROR_STREAM("Drink Move " << i <<" Failed");
+      }
+      ROS_INFO_STREAM("Count: " << count);
     }
-    else
-    {
-      ROS_ERROR_STREAM("Drink Move " << i <<" Failed");
-      set_gripper(false);
-      exit(1);
-    }
+    success = false;
+//    if (cfg.selected_object.compare("mug")== 0)
+    orientation_constrained = false;
 
   }
-
-
-
-//  moveit_msgs::RobotTrajectory trajectory_msg;
-
-//  double fraction = move_group_ptr->computeCartesianPath(waypoints,
-//                                               0.01,  // eef_step
-//                                               0.0,   // jump_threshold
-//                                               trajectory_msg, false);
-
-//  // The trajectory needs to be modified so it will include velocities as well.
-//  // First to create a RobotTrajectory object
-//  robot_trajectory::RobotTrajectory rt(move_group_ptr->getCurrentState()->getRobotModel(), "manipulator");
-
-//  // Second get a RobotTrajectory from trajectory
-//  rt.setRobotTrajectoryMsg(*move_group_ptr->getCurrentState(), trajectory_msg);
-
-//  // Thrid create a IterativeParabolicTimeParameterization object
-//  trajectory_processing::IterativeParabolicTimeParameterization iptp;
-
-//  // Fourth compute computeTimeStamps
-//  bool succes = iptp.computeTimeStamps(rt);
-//  ROS_INFO("Computed time stamp %s",succes?"SUCCEDED":"FAILED");
-
-//  // Get RobotTrajectory_msg from RobotTrajectory
-//  rt.getRobotTrajectoryMsg(trajectory_msg);
-
-//  // Finally plan and execute the trajectory
-//  plan.trajectory_ = trajectory_msg;
-//  ROS_INFO("Visualizing plan 4 (cartesian path) (%.2f%% acheived)",fraction * 100.0);
-//  move_group_ptr->execute(plan);
 }
 
 

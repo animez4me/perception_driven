@@ -23,101 +23,10 @@ using namespace boost::assign;
 
 // =============================== Utility functions ===============================
 
-//std::vector<geometry_msgs::Pose> create_manipulation_poses(double retreat_dis,double approach_dis,const tf::Transform &target_tf)
-//{
-//  geometry_msgs::Pose start_pose, target_pose, end_pose, pre_pose;
-//  std::vector<geometry_msgs::Pose> poses;
-//  tf::Transform pre_tf;
-//  //tf::TransformListener listener;
+std::vector<geometry_msgs::Pose> cartesian_poses(const tf::Transform &target_tf)
+{
 
-////  tf::Transform tcp;
-////  tf::TransformBroadcaster broadc;
-////  broadc.sendTransform(tf::StampedTransform(target_tf, ros::Time::now(), "ORK", "pre_tf"));
-////  ROS_INFO("transforming");
-
-//  tf::StampedTransform pre_to_ORK_tf, ORK_to_kinect_tf, kinect_to_world_tf;
-//  try{
-////    transform_listener_ptrr->waitForTransform("pre_tf", "ORK", ros::Time(0.0f), ros::Duration(3.0f));
-////    transform_listener_ptrr->lookupTransform("pre_tf", "ORK", ros::Time(0.0f), pre_to_ORK_tf);
-
-////    tf_listener.waitForTransform("pre_tf", "ORK",
-////                              ros::Time::now(), ros::Duration(10.0));
-////    tf_listener.lookupTransform("pre_tf", "ORK",
-////                             ros::Time::now(), pre_to_ORK_tf);
-////    listener.waitForTransform("ORK", "kinect2_rgb_optical_frame",
-////                              ros::Time(0), ros::Duration(10.0));
-////    listener.lookupTransform("ORK", "kinect2_rgb_optical_frame",
-////                             ros::Time(0), ORK_to_kinect_tf);
-////    listener.waitForTransform("kinect2_rgb_optical_frame", "world_frame",
-////                              ros::Time(0), ros::Duration(10.0));
-////    listener.lookupTransform("kinect2_rgb_optical_frame", "world_frame",
-////                             ros::Time(0), kinect_to_world_tf);
-//  }
-//  catch (tf::TransformException ex){
-//    ROS_ERROR("%s",ex.what());
-//    //ros::Duration(1.0).sleep();
-//  }
-
-////  tf::Transform pre_to_world_tf = pre_to_ORK_tf*ORK_to_kinect_tf*kinect_to_world_tf;
-
-//  // converting target pose
-//  tf::poseTFToMsg(target_tf,target_pose);
-////  tf::poseTFToMsg(pre_to_world_tf,start_pose);
-
-////  static tf2_ros::TransformBroadcaster br;
-////  geometry_msgs::TransformStamped transformStamped;
-
-////  transformStamped.header.stamp = ros::Time::now();
-////  transformStamped.header.frame_id = "pre_tf";
-////  transformStamped.child_frame_id = "ORK";
-////  transformStamped.transform.translation.x = target_pose.position.x;
-////  transformStamped.transform.translation.y = target_pose.position.y;
-////  transformStamped.transform.translation.z = target_pose.position.z + 0.05;
-////  transformStamped.transform.rotation.x = target_pose.orientation.x;
-////  transformStamped.transform.rotation.y = target_pose.orientation.y;
-////  transformStamped.transform.rotation.z = target_pose.orientation.z;
-////  transformStamped.transform.rotation.w = target_pose.orientation.w;
-
-////  br.sendTransform(transformStamped);
-
-////  ros::Duration(5.0).sleep();
-////  ros::spinOnce();
-
-////  tf2_ros::Buffer tfBuffer;
-////  tf2_ros::TransformListener tfListener(tfBuffer);
-////  geometry_msgs::TransformStamped transformStamped2;
-////  try{
-////    transformStamped2 = tfBuffer.lookupTransform("pre_tf", "world_frame",
-////                                                ros::Time(0), ros::Duration(10.0));
-////  }
-////  catch (tf2::TransformException &ex) {
-////    ROS_WARN("%s",ex.what());
-////  }
-
-
-
-
-//  // creating start pose by applying a translation along +z by approach distance
-//  tf::poseTFToMsg(Transform(Quaternion::getIdentity(),Vector3(0,0,approach_dis))*target_tf,start_pose);
-//  //tf::poseTFToMsg(pre_transform,start_pose);
-
-//  // creating end pose by applying a translation along +z by retreat distance
-//  //tf::poseTFToMsg(Transform(Quaternion::getIdentity(),Vector3(0,0,retreat_dis))*target_tf,end_pose);
-//  //tf::poseTFToMsg(pre_transform,end_pose);
-
-////  tf::poseMsgToTF(end_pose,still_tf);
-////  still_tf.setRotation(Quaternion(M_PI, 0, M_PI_2));
-////  broadc.sendTransform(tf::StampedTransform(still_tf, ros::Time::now(), "world_frame", "still"));
-////  tf::poseTFToMsg(still_tf,still_pose);
-
-//  poses.clear();
-//  poses.push_back(start_pose);
-//  poses.push_back(target_pose);
-//  poses.push_back(start_pose);
-
-//  return poses;
-//}
-
+}
 
 
 std::vector<geometry_msgs::Pose> create_drink_poses(const tf::Transform &target_tf)
@@ -177,8 +86,8 @@ std::vector<geometry_msgs::Pose> create_drink_poses(const tf::Transform &target_
   poses.clear();
 //  poses.push_back(middle_pose);
   poses.push_back(pre_drink_pose);
-  //poses.push_back(drink_pose);
-  //poses.push_back(pre_drink_pose);
+  poses.push_back(drink_pose);
+  poses.push_back(pre_drink_pose);
 
   return poses;
 }
@@ -240,37 +149,44 @@ std::ostream& operator<<(std::ostream& os, const geometry_msgs::Point pt)
 bool pick_and_place_config::init()
 {
   ros::NodeHandle nh("~");
-  double w, l, h, x, y, z, x_pre_drink, y_pre_drink, z_pre_drink, coke_height, coke_radius;
+  double x_drink, y_drink, z_drink, x_pre_drink, y_pre_drink, z_pre_drink, coke_height, coke_diameter;
+  double cereal_height, cereal_length, cereal_width, mug_height, mug_diameter;
   XmlRpc::XmlRpcValue list;
 
   if(nh.getParam("arm_group_name",ARM_GROUP_NAME)
-      && nh.getParam("tcp_link_name",TCP_LINK_NAME)
-      && nh.getParam("wrist_link_name",WRIST_LINK_NAME)
-      && nh.getParam("attached_object_link",ATTACHED_OBJECT_LINK_NAME)
-      && nh.getParam("world_frame_id",WORLD_FRAME_ID)
-      && nh.getParam("home_pose_name",HOME_POSE_NAME)
-      && nh.getParam("wait_pose_name",WAIT_POSE_NAME)
-      && nh.getParam("ar_frame_id",AR_TAG_FRAME_ID)
-      && nh.getParam("box_width",w)
-      && nh.getParam("box_length",l)
-      && nh.getParam("box_height",h)
-      && nh.getParam("box_place_x",x)
-      && nh.getParam("box_place_y",y)
-      && nh.getParam("box_place_z",z)
-      && nh.getParam("touch_links",list)
-      && nh.getParam("retreat_distance",RETREAT_DISTANCE)
-      && nh.getParam("approach_distance",APPROACH_DISTANCE)
-      && nh.getParam("pre_drink_x",x_pre_drink)
-      && nh.getParam("pre_drink_y",y_pre_drink)
-      && nh.getParam("pre_drink_z",z_pre_drink)
-      && nh.getParam("coke_height",coke_height)
-      && nh.getParam("coke_radius",coke_radius))
-  {
-    BOX_SIZE = Vector3(l,w,h);
-    BOX_PLACE_TF.setOrigin(Vector3(x,y,z));
-    PRE_DRINK_TF.setOrigin(Vector3(x_pre_drink,y_pre_drink,z_pre_drink));
+     && nh.getParam("tcp_link_name",TCP_LINK_NAME)
+     && nh.getParam("wrist_link_name",WRIST_LINK_NAME)
+     && nh.getParam("attached_object_link",ATTACHED_OBJECT_LINK_NAME)
+     && nh.getParam("world_frame_id",WORLD_FRAME_ID)
+     && nh.getParam("home_pose_name",HOME_POSE_NAME)
+     && nh.getParam("wait_pose_name",WAIT_POSE_NAME)
+     && nh.getParam("ar_frame_id",AR_TAG_FRAME_ID)
+     && nh.getParam("drink_place_x",x_drink)
+     && nh.getParam("drink_place_y",y_drink)
+     && nh.getParam("drink_place_z",z_drink)
+     && nh.getParam("touch_links",list)
+     && nh.getParam("retreat_distance",RETREAT_DISTANCE)
+     && nh.getParam("approach_distance",APPROACH_DISTANCE)
+     && nh.getParam("pre_drink_x",x_pre_drink)
+     && nh.getParam("pre_drink_y",y_pre_drink)
+     && nh.getParam("pre_drink_z",z_pre_drink)
+     && nh.getParam("coke_height",coke_height)
+     && nh.getParam("coke_diameter",coke_diameter)
+     && nh.getParam("mug_height",mug_height)
+     && nh.getParam("mug_diameter",mug_diameter)
+     && nh.getParam("cereal_height",cereal_height)
+     && nh.getParam("cereal_length",cereal_length)
+     && nh.getParam("cereal_width",cereal_width))
+  {    
+    COKE_PLACE_TF.setOrigin(Vector3(x_drink,y_drink,z_drink));
+    PRE_DRINK_TF.setOrigin(Vector3(x_pre_drink,y_pre_drink,z_pre_drink));    
     COKE_SIZE.push_back(coke_height);
-    COKE_SIZE.push_back(coke_radius);
+    COKE_SIZE.push_back(coke_diameter);
+    MUG_SIZE.push_back(mug_height);
+    MUG_SIZE.push_back(mug_diameter);
+    CEREAL_SIZE.push_back(cereal_height);
+    CEREAL_SIZE.push_back(cereal_length);
+    CEREAL_SIZE.push_back(cereal_width);
 
     // parsing touch links list
     for(int32_t i =0 ; i < list.size();i++)

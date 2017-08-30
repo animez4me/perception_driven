@@ -24,27 +24,24 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
   tf::StampedTransform tcp_to_wrist_tf;
   std::vector<geometry_msgs::Pose> tcp_place_poses, wrist_place_poses;
 
+  if (cfg.selected_object.compare("cereal") == 0) {
+    tf::StampedTransform pre_pour_tf;
+    geometry_msgs::Pose final_pose;
+    transform_listener_ptr->lookupTransform("world_frame", "pre_pour", ros::Time(0.0f), pre_pour_tf);
+    tf::poseTFToMsg(pre_pour_tf, final_pose);
+    final_pose.position.x = final_pose.position.x - 0.05;
+    final_pose.position.z = final_pose.position.z - cfg.CEREAL_SIZE[0]/2;
+    world_to_tcp_tf.setOrigin(tf::Vector3(final_pose.position.x, final_pose.position.y, final_pose.position.z));
+    world_to_tcp_tf.setRotation(pre_pour_tf.getRotation());
+  }
+  else
+  {
 
-  /* Fill Code:
-   * Objective:
-   * - Find the desired tcp pose at box place
-   * Hints:
-   * - Use the "setOrigin" method to set the position of "world_to_tcp_tf"
-   * 	using cfg.BOX_PLACE_TF.
-   * - cfg.BOX_PLACE_TF is a tf::Transform object so it provides a getOrigin() method.
-   */
-  world_to_tcp_tf.setOrigin(cfg.BOX_PLACE_TF.getOrigin());
-
-  /* Fill Code:
-   * Goal:
-   * - Reorient the tool so that the tcp points towards the box.
-   * Hints:
-   * - Use the "setRotation" to set the orientation of "world_to_tcp_tf".
-   * - The quaternion value "tf::Quaternion(M_PI, 0, M_PI/2.0f)" will point
-   * 	the tcp's direction towards the box.
-   */
-  world_to_tcp_tf.setRotation(tf::Quaternion(M_PI, 0, M_PI/2.0f));
-  //world_to_tcp_tf.setRotation(tf::Quaternion(tf::Vector3(1,0,0),M_PI));
+    world_to_tcp_tf.setOrigin(cfg.COKE_PLACE_TF.getOrigin());
+    world_to_tcp_tf.setRotation(tf::Quaternion(M_PI, 0, -M_PI/2.0f));
+//    world_to_tcp_tf.setRotation(tf::Quaternion(M_PI, 0, M_PI/2.0f));
+//    world_to_tcp_tf.setRotation(tf::Quaternion(tf::Vector3(1,0,0),M_PI));
+  }
 
 
   /* Fill Code:
@@ -88,55 +85,52 @@ std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlac
 
 std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlace::create_place_poses(double retreat_dis,double approach_dis,const tf::Transform &target_tf)
 {
-  geometry_msgs::Pose start_pose, target_pose, still_pose;
+  geometry_msgs::Pose start_pose, target_pose, end_pose;
   std::vector<geometry_msgs::Pose> poses;
   tf::Transform prepare;
 
-  prepare.setOrigin(tf::Vector3(0,0,-0.05));
-  //prepare.setRotation(tf::Quaternion(tf::Vector3(1,0,0),M_PI));
-  prepare.setRotation(tf::Quaternion::getIdentity());
-  //transform_broadcaster.sendTransform(tf::StampedTransform(prepare, ros::Time::now(), "ORK", "pre_tf"));
-  transform_broadcaster->sendTransform(tf::StampedTransform(prepare, ros::Time::now(), "world_to_tcp", "pre_tf"));
-
-  ROS_INFO("transforming");
-
-  tf::StampedTransform pre_to_ORK_tf, ORK_to_kinect_tf, kinect_to_world_tf;
-  try{
-    transform_listener_ptr->waitForTransform("pre_tf", "world_to_tcp", ros::Time(0.0f), ros::Duration(3.0f));
-    transform_listener_ptr->lookupTransform("pre_tf", "world_to_tcp", ros::Time(0.0f), pre_to_ORK_tf);
-    //        transform_listener_ptr->waitForTransform("pre_tf", "ORK", ros::Time(0.0f), ros::Duration(3.0f));
-    //        transform_listener_ptr->lookupTransform("pre_tf", "ORK", ros::Time(0.0f), pre_to_ORK_tf);
-    //        transform_listener_ptr->waitForTransform("ORK", "kinect2_rgb_optical_frame", ros::Time(0.0f), ros::Duration(3.0f));
-    //        transform_listener_ptr->lookupTransform("ORK", "kinect2_rgb_optical_frame", ros::Time(0.0f), pre_to_ORK_tf);
-    //        transform_listener_ptr->waitForTransform("kinect2_rgb_optical_frame", "world_frame", ros::Time(0.0f), ros::Duration(3.0f));
-    //        transform_listener_ptr->lookupTransform("kinect2_rgb_optical_frame", "world_frame", ros::Time(0.0f), pre_to_ORK_tf);
-
+  if (cfg.selected_object.compare("cereal") == 0) {
+    // converting target pose
+    tf::poseTFToMsg(target_tf,target_pose);
+    poses.clear();
+    poses.push_back(target_pose);
   }
-  catch (tf::TransformException ex){
-    ROS_ERROR("%s",ex.what());
-    exit(1);
+  else {
+//    prepare.setOrigin(tf::Vector3(0,0,-retreat_dis));
+//    prepare.setRotation(tf::Quaternion::getIdentity());
+//    transform_broadcaster->sendTransform(tf::StampedTransform(prepare, ros::Time::now(), "world_to_tcp", "pre_tf"));
+
+//    tf::StampedTransform pre_to_ORK_tf;
+//    try{
+//      transform_listener_ptr->waitForTransform("pre_tf", "world_to_tcp", ros::Time(0.0f), ros::Duration(3.0f));
+//      transform_listener_ptr->lookupTransform("pre_tf", "world_to_tcp", ros::Time(0.0f), pre_to_ORK_tf);
+
+//    }
+//    catch (tf::TransformException ex){
+//      ROS_ERROR("%s",ex.what());
+//      exit(1);
+//    }
+
+//    tf::Transform pre_to_world_tf = pre_to_ORK_tf * target_tf;
+    tf::Transform pre_to_world_tf;
+    pre_to_world_tf.setOrigin(target_tf.getOrigin());
+    pre_to_world_tf.setRotation(target_tf.getRotation());
+
+
+    // converting target pose
+    tf::poseTFToMsg(target_tf,target_pose);
+    tf::poseTFToMsg(pre_to_world_tf,start_pose);
+    start_pose.position.z = start_pose.position.z + 0.02;
+    //    tf::Transform still_tf;
+    //    still_tf.setOrigin(pre_to_world_tf.getOrigin());
+    end_pose = start_pose;
+    end_pose.position.z = end_pose.position.z + cfg.MUG_SIZE[0];
+
+    poses.clear();
+    poses.push_back(start_pose);
+    poses.push_back(target_pose);
+    poses.push_back(end_pose);
   }
-
-  //tf::Transform pre_to_world_tf = pre_to_ORK_tf * ORK_to_kinect_tf * kinect_to_world_tf;
-  tf::Transform pre_to_world_tf = pre_to_ORK_tf * target_tf;
-
-  // converting target pose
-  tf::poseTFToMsg(target_tf,target_pose);
-  tf::poseTFToMsg(pre_to_world_tf,start_pose);
-  tf::Transform still_tf;
-  still_tf.setOrigin(pre_to_world_tf.getOrigin());
-  //still_tf.setRotation(tf::Quaternion(tf::Vector3(1,0,0),M_PI));
-  //still_tf.setRotation(tf::Quaternion(M_PI, 0, M_PI_2));
-
-
-  // creating start pose by applying a translation along +z by approach distance
-  //tf::poseTFToMsg(Transform(Quaternion::getIdentity(),Vector3(0,0,approach_dis))*target_tf,start_pose);
-
-
-  poses.clear();
-  poses.push_back(start_pose);
-  poses.push_back(target_pose);
-  poses.push_back(start_pose);
 
 
   return poses;

@@ -26,13 +26,14 @@ void collision_avoidance_pick_and_place::PickAndPlace::move_to_wait_position()
    * - Use the "setNamedTarget" method in the "move_group" object.
    * - Look in the "cfg.WAIT_POSE_NAME" object for the name of the target.
    */
+  move_group_ptr->setPlannerId("RRTConnectkConfigDefault");
   move_group_ptr->setNamedTarget(cfg.WAIT_POSE_NAME);
 
   // set allowed planning time
   move_group_ptr->setPlanningTime(1.0f);
 
-  move_group_ptr->setMaxVelocityScalingFactor(0.1);
-  move_group_ptr->setMaxAccelerationScalingFactor(0.1);
+  move_group_ptr->setMaxVelocityScalingFactor(1.0f);
+  move_group_ptr->setMaxAccelerationScalingFactor(1.0f);
 
   /* Fill Code:
    * Goal:
