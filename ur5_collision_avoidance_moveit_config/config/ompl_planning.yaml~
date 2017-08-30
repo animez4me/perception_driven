@@ -36,7 +36,7 @@ manipulator:
     - PRMkConfigDefault
     - PRMstarkConfigDefault
   projection_evaluator: joints(shoulder_pan_joint,shoulder_lift_joint)
-  longest_valid_segment_fraction: 0.01
+  longest_valid_segment_fraction: 0.005
   enforce_joint_model_state_space: true
 vacuum_gripper:
   planner_configs:
